@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools==84.2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cripto-bot"
+version = "0.1.0"
+description = "Base local PAPER offline para robo Binance Spot"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = ["pydantic>=2.12,<3"]
+
+[project.scripts]
+cripto-bot = "cripto_bot.entrypoints.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.14,<1", "mypy>=1.18,<2"]
+
+[tool.uv]
+required-version = "==0.12.19"
+
+[tool.setuptools.packages.find]
+where = ["modules/trading/src"]
+include = ["cripto_bot*"]
+namespaces = false
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = [".venv-wheel", ".uv-cache", ".wheel-smoke"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --import-mode=importlib"
+markers = ["unit: testes unitarios", "integration: CLI instalada e subprocessos"]
+
+[tool.coverage.run]
+branch = true
+source = ["cripto_bot"]

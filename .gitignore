@@ -1,0 +1,17 @@
+# Artefatos locais regeneraveis
+.venv/
+.venv-wheel/
+.uv-cache/
+.wheel-smoke/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+build/
+dist/
+.env
+.env.*
