@@ -1,0 +1,10 @@
+mode = "PAPER"
+
+[market]
+source = "fixture"
+symbol = "BTCUSDT"
+interval = "15m"
+fixture_file = "config/fixtures/market-sample.json"
+data_dir = "data/market-fixture"
+page_limit = 1000
+max_pages = 10

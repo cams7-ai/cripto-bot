@@ -1,0 +1,59 @@
+{
+  "server_time": {
+    "serverTime": 1790816400000
+  },
+  "exchange_info": {
+    "symbols": [
+      {
+        "symbol": "BTCUSDT",
+        "status": "TRADING",
+        "isSpotTradingAllowed": true,
+        "baseAsset": "BTC",
+        "quoteAsset": "USDT",
+        "filters": [
+          {
+            "filterType": "PRICE_FILTER",
+            "tickSize": "0.01"
+          }
+        ]
+      }
+    ]
+  },
+  "book_ticker": {
+    "symbol": "BTCUSDT",
+    "bidPrice": "100.00",
+    "bidQty": "1",
+    "askPrice": "100.01",
+    "askQty": "2"
+  },
+  "klines": [
+    [
+      1790812800000,
+      "100.00",
+      "102.00",
+      "99.00",
+      "101.00",
+      "1.5",
+      1790813699999,
+      "151.5",
+      5,
+      "0.5",
+      "50.5",
+      "0"
+    ],
+    [
+      1790813700000,
+      "100.00",
+      "102.00",
+      "99.00",
+      "101.00",
+      "1.5",
+      1790814599999,
+      "151.5",
+      5,
+      "0.5",
+      "50.5",
+      "0"
+    ]
+  ]
+}

@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Base local PAPER offline para robo Binance Spot"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-dependencies = ["pydantic>=2.12,<3"]
+dependencies = ["pydantic>=2.12,<3", "httpx>=0.28,<0.29"]
 
 [project.scripts]
 cripto-bot = "cripto_bot.entrypoints.cli:main"
@@ -27,7 +27,7 @@ namespaces = false
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = [".venv-wheel", ".uv-cache", ".wheel-smoke"]
+extend-exclude = [".venv-wheel", ".uv-cache", ".wheel-smoke", ".pytest-tmp"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -38,7 +38,7 @@ strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers --import-mode=importlib"
+addopts = "--strict-markers --import-mode=importlib --basetemp=.pytest-tmp"
 markers = ["unit: testes unitarios", "integration: CLI instalada e subprocessos"]
 
 [tool.coverage.run]

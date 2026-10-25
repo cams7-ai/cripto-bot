@@ -13,6 +13,8 @@ def audit(event, args):
 sys.addaudithook(audit)
 if sys.argv[1] == "--probe":
     socket.socket()
+elif sys.argv[1] == "--code":
+    exec(compile(sys.argv[2], "offline-test", "exec"))
 else:
     script = sys.argv[1]
     sys.argv = sys.argv[1:]

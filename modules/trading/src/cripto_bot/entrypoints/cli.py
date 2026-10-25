@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from cripto_bot.adapters.config import ConfigError, load_config
 from cripto_bot.application.run_once import run_once
+from cripto_bot.entrypoints.market import execute_collection
 from cripto_bot.observability.logging import emit, utc_now, utc_timestamp
 
 
@@ -38,9 +39,13 @@ def main(
         timestamp = utc_timestamp(clock())
         parser = SafeParser(prog="cripto-bot", description="Base PAPER offline")
         sub = parser.add_subparsers(dest="command", required=True)
-        for name in ("check-config", "run-once"):
+        for name in ("check-config", "run-once", "collect-market"):
             command = sub.add_parser(name)
             command.add_argument("--config", type=Path)
+            if name == "collect-market":
+                command.add_argument("--start", required=True)
+                command.add_argument("--end", required=True)
+                command.add_argument("--allow-network", action="store_true")
         args = parser.parse_args(argv)
         settings = load_config(args.config, env)
         common: dict[str, object] = {
@@ -48,13 +53,19 @@ def main(
             "timestamp": timestamp,
             "mode": settings.mode,
         }
+        code = 0
         if args.command == "check-config":
             result = {**common, "status": "VALID"}
-        else:
+        elif args.command == "run-once":
             result = {**common, **asdict(run_once(settings))}
-        emit(err, {**common, "level": "INFO", "event": args.command})
+        else:
+            code, collected = execute_collection(
+                settings, args.start, args.end, args.allow_network, run_id
+            )
+            result = {**common, **collected}
+        emit(err, {**common, "level": "INFO" if code == 0 else "ERROR", "event": args.command})
         emit(out, result)
-        return 0
+        return code
     except ConfigError:
         emit(
             err,

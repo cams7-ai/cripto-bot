@@ -1,0 +1,9 @@
+mode = "PAPER"
+
+[market]
+source = "binance_public"
+symbol = "BTCUSDT"
+interval = "15m"
+data_dir = "data/market-public"
+page_limit = 1000
+max_pages = 10
