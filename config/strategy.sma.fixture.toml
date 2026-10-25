@@ -1,0 +1,37 @@
+mode = "PAPER"
+
+[strategy]
+environment = "local"
+evaluation_type = "fixture"
+wallet_id = "sma-demo"
+data_dir = "data/sma-fixture-v1"
+fixture_file = "config/fixtures/strategy-sma-crossings.json"
+initial_usdt = "10000.00"
+fee_bps = "10"
+spread_bps = "10"
+slippage_bps = "5"
+max_entry_fraction = "0.10"
+max_exposure_fraction = "0.10"
+max_daily_loss_fraction = "0.01"
+max_drawdown_fraction = "0.05"
+max_quote_age_ms = 5000
+
+[modules.trend_btc]
+module_id = "trend_sma"
+version = "1"
+enabled = true
+environments = ["local"]
+modes = ["PAPER"]
+evaluation_types = ["fixture"]
+symbols = ["BTCUSDT"]
+capital_weight = "0.10"
+execution = "immediate"
+on_disable = "hold_and_monitor"
+
+[modules.trend_btc.params]
+fast_window = 20
+slow_window = 50
+interval = "15m"
+
+[coordination]
+policy = "exclusive_owner"

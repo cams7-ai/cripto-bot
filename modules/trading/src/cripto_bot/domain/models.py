@@ -1,9 +1,14 @@
 """Modelos puros da base local; sem integracoes externas."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from cripto_bot.domain.modules.models import StrategySettings
 
 Mode = Literal["PAPER"]
 
@@ -51,6 +56,7 @@ class Settings:
     mode: Mode = "PAPER"
     market: MarketSettings | None = None
     paper: PaperSettings | None = None
+    strategy: StrategySettings | None = None
 
 
 def parse_decimal(value: object) -> Decimal:

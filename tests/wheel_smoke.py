@@ -143,6 +143,70 @@ for command, expected in (
             },
         }
     )
+
+# SMA em fixture: default desabilitado e carteira modular nova por smoke.
+sma_template = (ROOT / "config/strategy.sma.example.toml").read_text()
+sma_template = sma_template.replace(
+    "config/fixtures/strategy-sma-crossings.json",
+    str(ROOT / "config/fixtures/strategy-sma-crossings.json"),
+)
+sma_config = scratch / "strategy.toml"
+sma_config.write_text(sma_template.replace("data/sma-demo", str(scratch / "strategy-wallet")))
+sma_hash = None
+for command, expected in (
+    ("strategy-run", 0),
+    ("strategy-run", 2),
+    ("strategy-reconcile", 0),
+    ("strategy-report", 0),
+    ("strategy-run", 0),
+):
+    if expected == 2:
+        sma_config.write_text(sma_config.read_text().replace("enabled = false", "enabled = true"))
+    proc_sma = subprocess.run(
+        [str(PYTHON), "-I", str(RUNNER), str(SCRIPT), command, "--config", str(sma_config)],
+        cwd=NEUTRAL,
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert proc_sma.returncode == 0, proc_sma.stdout + proc_sma.stderr
+    result = json.loads(proc_sma.stdout)
+    assert result["simulated_fills"] == expected and result["orders_sent"] == 0
+    if result["status"] == "STRATEGY_NOOP":
+        assert not (scratch / "strategy-wallet").exists()
+    else:
+        assert result["wallet"]["usdt_free"] == "9905.46181258"
+        assert result["total_evaluated_cycles"] == 71 and result["reconciled"]
+        if sma_hash is None:
+            sma_hash = result["financial_sha256"]
+        assert result["financial_sha256"] == sma_hash
+        if "manifest" in result:
+            manifest = json.loads(Path(result["manifest"]).read_text())
+            for name, digest in manifest["files"].items():
+                body = (Path(result["manifest"]).parent / name).read_bytes()
+                assert hashlib.sha256(body).hexdigest() == digest
+    checks.append(
+        {
+            "command": command,
+            "exit_code": proc_sma.returncode,
+            "result": {
+                k: result[k]
+                for k in (
+                    "status",
+                    "simulated_fills",
+                    "orders_sent",
+                    "financial_sha256",
+                    "total_evaluated_cycles",
+                    "wallet",
+                    "manifest",
+                    "html_report",
+                )
+                if k in result
+            },
+        }
+    )
+
 proc = subprocess.run(
     [str(PYTHON), "-I", str(RUNNER), str(SCRIPT), "run-once"],
     cwd=NEUTRAL,

@@ -1,9 +1,11 @@
-# Cripto Bot — coleta e carteira PAPER
+# Cripto Bot — coleta, carteira PAPER e SMA opt-in
 
 A aplicação valida configuração, preserva o ciclo vazio `NOOP/PAPER/orders_sent=0`
 e coleta candles Spot, metadados e bid/ask pela CLI. A Sprint 02 adiciona fixtures
 offline, SQLite transacional e exportações verificáveis. A Sprint 03 acrescenta
-carteira e execução integral sintética, sem ordens externas ou estratégia automática.
+carteira e execução integral sintética. A Sprint 04 adiciona estratégia SMA opt-in
+em fixture offline, com estado modular, risco centralizado e relatório HTML.
+Nenhuma ordem externa é enviada; todos os módulos começam desabilitados.
 
 ## Preparação
 
@@ -174,3 +176,57 @@ Este módulo possui repositório Git próprio em `cripto-bot`. A documentação
 central permanece no repositório independente `../docs`. Cada novo módulo
 será criado diretamente em `/home/cams7/Dev/Cripto` com seu próprio Git.
 Nenhum recurso AWS, credencial, ordem externa ou notificação é necessário à Sprint 01.
+
+
+## Sprint 04 — SMA e relatórios legíveis
+
+A base modular aceita somente local/PAPER/fixture/BTCUSDT/15m. A instalação
+sem configuração e o exemplo padrão retornam NOOP, sem carteira ou intenção.
+O opt-in separado executa SMA20/50 em 71 candles sintéticos fechados:
+
+```bash
+uv run --locked cripto-bot strategy-run
+uv run --locked cripto-bot check-config --config config/strategy.sma.example.toml
+uv run --locked cripto-bot strategy-run --config config/strategy.sma.example.toml
+uv run --locked cripto-bot strategy-run --config config/strategy.sma.fixture.toml
+uv run --locked cripto-bot strategy-reconcile --config config/strategy.sma.fixture.toml
+uv run --locked cripto-bot strategy-report --config config/strategy.sma.fixture.toml
+uv run --locked cripto-bot strategy-run --config config/strategy.sma.fixture.toml
+```
+
+Em carteira nova, o opt-in demonstra dois fills de 9.072754 BTC, taxas totais
+1.90536908 USDT, resultado -94.53818742 USDT e saldo final 9905.46181258 USDT.
+São valores fictícios; o resultado negativo é esperado. Replay gera zero novos
+fills. Se o diretório já existir, não apagá-lo para fabricar primeira execução;
+criar outro TOML/diretório sintético identificado. A fixture de instalação usa
+`data/sma-fixture-v1`; os dados de desenvolvimento anteriores não são o aceite.
+
+`strategy-run` e `strategy-report` publicam `report.json`, `report.html` e
+`manifest.json` em `<strategy.data_dir>/reports/<run_id>/`. O JSON da CLI informa
+`html_report` e `manifest`. Abra o HTML no navegador: contém resumo, curva do
+patrimônio, motivos/médias, operações, risco e detalhes de todos os ciclos.
+O arquivo é autocontido, sem scripts ou recursos remotos, com estilo de impressão.
+Report usa snapshot de banco somente leitura; não avalia nem negocia. Falha de
+exportação não refaz fills; reexportar com `strategy-report`.
+
+Os comandos `paper-*` continuam usando carteira schema v1 e roteiro manual.
+Os comandos `strategy-*` usam schema v2/modelo `paper-modular-v1`, em diretório
+novo; um fluxo rejeita o banco do outro. Não há migração/reset automático.
+O banco de mercado permanece v1. Estratégia nunca recebe cliente HTTP ou porta
+financeira; coordenador/risco não podem ser desligados por flag. Overrides em
+`modules.<instance>.limits` e `coordination.symbol_limits.BTCUSDT` só restringem
+limites globais. Duas instâncias ativas no mesmo recurso são incompatíveis.
+
+Desativação conserva monitoramento e custódia: uma posição remanescente fica
+DRAINING, sem venda automática. Mudança material com posição é rejeitada;
+reativação em caixa não executa cruzamentos antigos. As dependências declaradas
+por `depends_on` exigem instância disponível e sem ciclo. Não há import dinâmico.
+TWAP/VWAP, multiativo, backtest completo, ciclo contínuo, parcial/UNKNOWN real,
+AWS e trading privado permanecem fora deste incremento. `run-once` segue NOOP;
+`--allow-network` continua exclusivo da coleta pública explícita.
+
+Documentação: [SMA](../docs/estrategias/trend_sma.md),
+[especificação 04](../docs/sprints/sprint-04.md),
+[validação/evidências](../docs/testes/sprint-04-validacao.md),
+[banco v1/v2](../docs/bancos/paper-sqlite.md) e
+[ADR 0005](../docs/decisoes/0005-estrategia-modular-e-persistencia.md).

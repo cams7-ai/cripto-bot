@@ -12,7 +12,10 @@ from cripto_bot.domain.market import canonical, iso
 from cripto_bot.domain.portfolio.engine import transition
 from cripto_bot.domain.portfolio.models import (
     MODEL,
+    Intent,
     PaperError,
+    Plan,
+    Posting,
     Wallet,
     fingerprint,
     record,
@@ -37,6 +40,30 @@ DDL = (
 
 
 class PaperStore:
+    schema_version = 1
+    model = MODEL
+    ddl: tuple[str, ...] = DDL
+    tables = {"metadata", "projection", "journal", "postings", "intents", "fills"}
+
+    def empty_wallet(self) -> Wallet:
+        return Wallet()
+
+    def reduce(
+        self,
+        wallet: Wallet,
+        kind: str,
+        payload: dict[str, object],
+        parameters: dict[str, object],
+        rules: dict[str, object],
+    ) -> tuple[Wallet, list[Posting]]:
+        return transition(wallet, kind, payload, parameters, rules)
+
+    def intent_record(self, action: str, intent: Intent, wallet: Wallet) -> object:
+        return record(intent)
+
+    def fill_record(self, plan: Plan, wallet: Wallet) -> object:
+        return record(plan)
+
     def __init__(self, directory: Path, *, create: bool = False, readonly: bool = False) -> None:
         self.directory = directory
         self.create = create
@@ -75,7 +102,7 @@ class PaperStore:
             }
             if not version and not tables and self.create and not self.readonly:
                 with self.transaction():
-                    for statement in DDL:
+                    for statement in self.ddl:
                         self.db.execute(statement)
                     for table in ("journal", "postings", "fills"):
                         for mutation in ("UPDATE", "DELETE"):
@@ -84,15 +111,8 @@ class PaperStore:
                                 f"BEFORE {mutation} ON {table} "
                                 "BEGIN SELECT RAISE(ABORT,'immutable paper history'); END"
                             )
-                    self.db.execute("PRAGMA user_version=1")
-            elif version != 1 or tables != {
-                "metadata",
-                "projection",
-                "journal",
-                "postings",
-                "intents",
-                "fills",
-            }:
+                    self.db.execute(f"PRAGMA user_version={self.schema_version}")
+            elif version != self.schema_version or tables != self.tables:
                 raise PaperError("INCOMPATIBLE_PAPER_SCHEMA")
             if self.db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
                 raise PaperError("CORRUPT_PAPER_DATABASE")
@@ -148,9 +168,15 @@ class PaperStore:
             return
         with self.transaction():
             self.db.execute("INSERT INTO metadata VALUES(1,?,'')", (canonical(context),))
-            self.db.execute("INSERT INTO projection VALUES(1,0,?)", (canonical(Wallet().data()),))
+            self.db.execute(
+                "INSERT INTO projection VALUES(1,0,?)", (canonical(self.empty_wallet().data()),)
+            )
             self._write(
-                "GENESIS", "GENESIS", {"timestamp": context["start_time"]}, Wallet(), context
+                "GENESIS",
+                "GENESIS",
+                {"timestamp": context["start_time"]},
+                self.empty_wallet(),
+                context,
             )
 
     def posting_records(
@@ -184,7 +210,7 @@ class PaperStore:
     ) -> Wallet:
         parameters = require_object(context["parameters"])
         rules = require_object(context["rules"])
-        updated, postings = transition(wallet, kind, payload, parameters, rules)
+        updated, postings = self.reduce(wallet, kind, payload, parameters, rules)
         ledger = self.posting_records(postings, updated, context, key, payload)
         row = self.db.execute("SELECT chain_hash FROM journal ORDER BY seq DESC LIMIT 1").fetchone()
         previous = fingerprint(context) if row is None else str(row[0])
@@ -211,14 +237,18 @@ class PaperStore:
             self.db.execute(
                 "INSERT INTO intents VALUES(?,?) ON CONFLICT(action_key) "
                 "DO UPDATE SET data=excluded.data",
-                (action, canonical(record(intent))),
+                (action, canonical(self.intent_record(action, intent, updated))),
             )
         if kind == "FILL":
             intent = updated.intents[str(payload["action_key"])]
             assert intent.plan is not None
             self.db.execute(
                 "INSERT INTO fills VALUES(?,?,?)",
-                (intent.plan.fill_id, intent.plan.action, canonical(record(intent.plan))),
+                (
+                    intent.plan.fill_id,
+                    intent.plan.action,
+                    canonical(self.fill_record(intent.plan, updated)),
+                ),
             )
         cursor = self.db.execute(
             "UPDATE projection SET data=?,version=? WHERE id=1 AND version=?",
@@ -256,9 +286,9 @@ class PaperStore:
 
     def replay(self, *, check_projection: bool = True) -> Wallet:
         context = self.context()
-        if context.get("model") != MODEL:
+        if context.get("model") != self.model:
             raise PaperError("MODEL_CONFLICT")
-        wallet = Wallet()
+        wallet = self.empty_wallet()
         previous = fingerprint(context)
         expected_fills: dict[str, tuple[str, str]] = {}
         for seq, key, request, kind, payload_text, prior, chain in self.db.execute(
@@ -273,7 +303,7 @@ class PaperStore:
                 or request != fingerprint({"kind": kind, "payload": payload})
             ):
                 raise PaperError("JOURNAL_DIVERGENCE")
-            wallet, postings = transition(
+            wallet, postings = self.reduce(
                 wallet,
                 kind,
                 payload,
@@ -303,7 +333,7 @@ class PaperStore:
                 assert intent.plan is not None
                 expected_fills[intent.plan.fill_id] = (
                     intent.plan.action,
-                    canonical(record(intent.plan)),
+                    canonical(self.fill_record(intent.plan, wallet)),
                 )
         if not wallet.version:
             raise PaperError("MISSING_GENESIS")
@@ -317,7 +347,10 @@ class PaperStore:
         ):
             raise PaperError("PROJECTION_DIVERGENCE")
         stored_intents = dict(self.db.execute("SELECT action_key,data FROM intents"))
-        if stored_intents != {key: canonical(record(item)) for key, item in wallet.intents.items()}:
+        if stored_intents != {
+            key: canonical(self.intent_record(key, item, wallet))
+            for key, item in wallet.intents.items()
+        }:
             raise PaperError("INTENT_DIVERGENCE")
         if {
             row[0]: (row[1], row[2])

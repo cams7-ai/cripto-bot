@@ -14,6 +14,7 @@ from cripto_bot.adapters.config import ConfigError, load_config
 from cripto_bot.application.run_once import run_once
 from cripto_bot.entrypoints.market import execute_collection
 from cripto_bot.entrypoints.paper import execute_paper
+from cripto_bot.entrypoints.strategy import execute_strategy
 from cripto_bot.observability.logging import emit, utc_now, utc_timestamp
 
 
@@ -47,6 +48,9 @@ def main(
             "paper-run",
             "paper-report",
             "paper-reconcile",
+            "strategy-run",
+            "strategy-report",
+            "strategy-reconcile",
         ):
             command = sub.add_parser(name)
             command.add_argument("--config", type=Path)
@@ -66,6 +70,9 @@ def main(
             result = {**common, "status": "VALID"}
         elif args.command == "run-once":
             result = {**common, **asdict(run_once(settings))}
+        elif args.command.startswith("strategy-"):
+            code, strategy = execute_strategy(settings, args.command, run_id)
+            result = {**common, **strategy}
         elif args.command.startswith("paper-"):
             code, paper = execute_paper(settings, args.command, run_id)
             result = {**common, **paper}
