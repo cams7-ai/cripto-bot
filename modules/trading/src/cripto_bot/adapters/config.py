@@ -7,7 +7,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from cripto_bot.domain.models import MarketSettings, Settings
+from cripto_bot.domain.models import MarketSettings, PaperSettings, Settings
+from cripto_bot.domain.portfolio.models import PaperError, identifier, number
 
 
 class ConfigError(ValueError):
@@ -52,10 +53,27 @@ def contained(path: str, root: Path) -> Path:
         raise ConfigError("caminho invalido") from None
 
 
+class PaperInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, hide_input_in_errors=True)
+    wallet_id: str = "paper-demo"
+    data_dir: str
+    scenario_file: str
+    initial_usdt: str = "10000.00"
+    fee_bps: str = "10"
+    spread_bps: str = "10"
+    slippage_bps: str = "5"
+    max_entry_fraction: str = "0.10"
+    max_exposure_fraction: str = "0.10"
+    max_daily_loss_fraction: str = "0.01"
+    max_drawdown_fraction: str = "0.05"
+    max_quote_age_ms: int = Field(default=5000, ge=1, le=5000)
+
+
 class ConfigInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, hide_input_in_errors=True)
     mode: Literal["PAPER"] = "PAPER"
     market: MarketInput | None = None
+    paper: PaperInput | None = None
 
 
 def load_config(
@@ -100,4 +118,32 @@ def load_config(
             page_limit=item.page_limit,
             max_pages=item.max_pages,
         )
-    return Settings(mode=parsed.mode, market=market)
+    paper = None
+    if parsed.paper is not None:
+        item_paper = parsed.paper
+        try:
+            identifier(item_paper.wallet_id)
+            if number(item_paper.initial_usdt) <= 0:
+                raise PaperError("INVALID_INITIAL")
+            for value in (item_paper.fee_bps, item_paper.spread_bps, item_paper.slippage_bps):
+                if number(value) > 100:
+                    raise PaperError("INVALID_COST")
+            for value in (
+                item_paper.max_entry_fraction,
+                item_paper.max_exposure_fraction,
+                item_paper.max_daily_loss_fraction,
+                item_paper.max_drawdown_fraction,
+            ):
+                if not 0 < number(value) <= 1:
+                    raise PaperError("INVALID_LIMIT")
+        except PaperError:
+            raise ConfigError("configuracao PAPER invalida") from None
+        module_root = application_root() if root is None else root.resolve()
+        values = item_paper.model_dump(exclude={"data_dir", "scenario_file"})
+        paper = PaperSettings(
+            root=module_root,
+            data_dir=contained(item_paper.data_dir, module_root),
+            scenario_file=contained(item_paper.scenario_file, module_root),
+            **values,
+        )
+    return Settings(mode=parsed.mode, market=market, paper=paper)

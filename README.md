@@ -1,8 +1,9 @@
-# Cripto Bot — coleta local PAPER
+# Cripto Bot — coleta e carteira PAPER
 
 A aplicação valida configuração, preserva o ciclo vazio `NOOP/PAPER/orders_sent=0`
 e coleta candles Spot, metadados e bid/ask pela CLI. A Sprint 02 adiciona fixtures
-offline, SQLite transacional e exportações verificáveis. Não há carteira ou negociação.
+offline, SQLite transacional e exportações verificáveis. A Sprint 03 acrescenta
+carteira e execução integral sintética, sem ordens externas ou estratégia automática.
 
 ## Preparação
 
@@ -79,6 +80,72 @@ incompatível não é recriado automaticamente. Não apagar o banco para esconde
 um erro. Limpeza e diagnóstico estão no
 [guia da Sprint 02](../docs/testes/sprint-02-validacao.md).
 
+## Carteira e execução sintética offline
+
+```bash
+cd /home/cams7/Dev/Cripto/cripto-bot
+export UV_CACHE_DIR="$PWD/.uv-cache"
+uv run --locked cripto-bot check-config --config config/paper.execution.example.toml
+uv run --locked cripto-bot paper-run --config config/paper.execution.example.toml
+uv run --locked cripto-bot paper-reconcile --config config/paper.execution.example.toml
+uv run --locked cripto-bot paper-report --config config/paper.execution.example.toml
+uv run --locked cripto-bot paper-run --config config/paper.execution.example.toml
+```
+
+Em carteira nova, o roteiro gera dois fills locais, termina com
+`10009.58001000 USDT`, sem BTC/reservas, taxas de `0.20999000 USDT` e resultado
+realizado de `9.58001000 USDT`. Preços, regras e capital são sintéticos.
+A repetição gera zero fills novos, preserva o histórico e o mesmo hash financeiro.
+A demonstração executada durante o desenvolvimento foi preservada: se usar seu
+diretório `data/paper-demo` já preenchido, o comando apenas identifica o replay.
+
+A tabela opcional `paper` define identidade, diretório, roteiro, custos e limites.
+Valores financeiros exigem strings, até 18 dígitos inteiros e oito fracionários;
+sem float/NaN/notação exponencial. Defaults do exemplo: entrada e exposição de
+10%, perda diária de 1%, drawdown de 5%, taxa/spread/slippage de 10/10/5 bps.
+Os novos comandos rejeitam `--allow-network` e não constroem clientes HTTP,
+mesmo se a configuração contiver tabela `market`. `run-once` permanece NOOP.
+
+O cenário JSON é validado integralmente antes de criar estado financeiro: no
+máximo 1 MiB e 1000 eventos, tipos DAY_START/MARK/ORDER, UTC com milissegundos,
+identidades únicas e observações inline identificadas. O relógio é de replay.
+Uma decisão precede a observação; o fill não antecede a cotação nem a usa com
+idade superior a 5 s. Não há busca de preço novo para recuperar uma reserva.
+
+`paper.sqlite3` é separado de `market.sqlite3`. Capital inicial, reservas, fills,
+taxas e contrapartidas possuem ledger balanceado separadamente em BTC e USDT.
+Uma transação grava plano/reserva; outra confirma fill e posição. O plano é
+integral e determinístico. Rejeição de risco não gera fill; rejeição/cancelamento
+local de reserva, exercitados nas APIs de aplicação/domínio, liberam o ativo.
+Fills parciais e cancelamento administrativo pela CLI não integram esta Sprint.
+
+Um flock protege cada store. Antes de novos commits, o histórico é refeito e
+comparado à projeção e à versão da carteira; SQLite mantém constraints e triggers
+para preservar o journal/ledger/fills. Não alterar limites/modelo/roteiro de uma
+carteira existente para reinicializá-la. Não existe comando de reset. Mudança
+incompatível falha; uma experiência diferente deve usar carteira sintética nova.
+
+Divergência bloqueia novos efeitos, sem ajustar saldo por diferença.
+`paper-reconcile` persiste o bloqueio quando possível. `paper-report` é somente
+leitura: pode mostrar reconstrução do histórico marcada como não reconciliada
+quando a projeção diverge; histórico inválido produz diagnóstico sem inventar
+saldos. Sem banco existente, report falha e não inicializa carteira.
+
+DAY_START fixa o baseline à meia-noite UTC; perda/pico/travas persistem. Uma
+saída pode reduzir posição sob trava de risco, sem liquidação automática. O
+simulador suporta taxas somente em USDT e filtros sintéticos de preço, lote e
+notional; filtro desconhecido bloqueia a intenção. REFERENCE aplica metade do
+spread por lado mais slippage; BID_ASK já contém spread e não o cobra novamente.
+
+Relatórios em `data_dir/reports/<run_id>` são derivados do banco e têm manifesto
+com hashes e proveniência. Falha de exportação preserva fills; repetir reexporta.
+O hash financeiro exclui run_id/horários reais, mantendo o relógio e eventos do
+replay. Exit 3 indica falha operacional/divergência; rejeição de risco esperada
+fica no relatório do roteiro com status RISK_REJECTED e zero fill correspondente.
+
+Detalhes, resultados e limitações no
+[guia da Sprint 03](../docs/testes/sprint-03-validacao.md).
+
 ## Verificação
 
 ```bash
@@ -98,6 +165,7 @@ O lock deve ser alterado deliberadamente; instalações normais usam `--locked`.
 - [Planejamento](../docs/planejamento.md)
 - [Sprint 01](../docs/sprints/sprint-01.md)
 - [Sprint 02](../docs/sprints/sprint-02.md)
+- [Sprint 03](../docs/sprints/sprint-03.md)
 - [Arquitetura](../docs/arquitetura.md)
 - [ADR 0001](../docs/decisoes/0001-monolito-modular.md)
 - [ADR 0002](../docs/decisoes/0002-modos-e-decimais.md)

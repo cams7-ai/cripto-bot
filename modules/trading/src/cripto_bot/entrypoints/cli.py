@@ -13,6 +13,7 @@ from uuid import uuid4
 from cripto_bot.adapters.config import ConfigError, load_config
 from cripto_bot.application.run_once import run_once
 from cripto_bot.entrypoints.market import execute_collection
+from cripto_bot.entrypoints.paper import execute_paper
 from cripto_bot.observability.logging import emit, utc_now, utc_timestamp
 
 
@@ -39,7 +40,14 @@ def main(
         timestamp = utc_timestamp(clock())
         parser = SafeParser(prog="cripto-bot", description="Base PAPER offline")
         sub = parser.add_subparsers(dest="command", required=True)
-        for name in ("check-config", "run-once", "collect-market"):
+        for name in (
+            "check-config",
+            "run-once",
+            "collect-market",
+            "paper-run",
+            "paper-report",
+            "paper-reconcile",
+        ):
             command = sub.add_parser(name)
             command.add_argument("--config", type=Path)
             if name == "collect-market":
@@ -58,6 +66,9 @@ def main(
             result = {**common, "status": "VALID"}
         elif args.command == "run-once":
             result = {**common, **asdict(run_once(settings))}
+        elif args.command.startswith("paper-"):
+            code, paper = execute_paper(settings, args.command, run_id)
+            result = {**common, **paper}
         else:
             code, collected = execute_collection(
                 settings, args.start, args.end, args.allow_network, run_id

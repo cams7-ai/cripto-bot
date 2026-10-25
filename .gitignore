@@ -1,26 +1,68 @@
-# Artefatos locais regeneraveis
+# IDEs
+.idea/
+.vscode/
+
+# Ambientes virtuais
 .venv/
+venv/
+env/
 .venv-wheel/
 .uv-cache/
 .wheel-smoke/
-__pycache__/
-*.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage*
-htmlcov/
-build/
-dist/
+
+# Variáveis de ambiente
 .env
 .env.*
+!.env.example
+
+# Perfil persistente do navegador
+.whatsapp-profile/
+.lotobot-profile/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+.mypy_cache/
+.ruff_cache/
+
+# Testes e cobertura
+.pytest_cache/
+.pytest-tmp/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
 
 # Coletas e evidencias locais geradas
+artefatos/
+db/
 data/
 reports/
 *.sqlite3
 *.sqlite3-*
 .writer.lock
 
-.pytest-tmp/
+# Estado local e segredos
+scripts/socks5-ipv4-aws-state.json
+scripts/browser-socks5-ipv4-aws-state.json
+scripts/browser-socks5-ipv6-aws-state.json
+application-secret.json
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# Lock do store financeiro local
+.paper.lock

@@ -96,6 +96,53 @@ for expected in (2, 0):
     checks.append(
         {"command": "collect-market", "exit_code": collected.returncode, "result": result}
     )
+paper_config = scratch / "paper.toml"
+paper_config.write_text(
+    'mode="PAPER"\n[paper]\n'
+    f'scenario_file="{ROOT / "config/fixtures/paper-roundtrip.json"}"\n'
+    f'data_dir="{scratch / "paper-wallet"}"\n'
+)
+financial_hash = None
+for command, expected in (
+    ("paper-run", 2),
+    ("paper-reconcile", 0),
+    ("paper-report", 0),
+    ("paper-run", 0),
+):
+    paper = subprocess.run(
+        [str(PYTHON), "-I", str(RUNNER), str(SCRIPT), command, "--config", str(paper_config)],
+        cwd=NEUTRAL,
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    assert paper.returncode == 0, paper.stdout + paper.stderr
+    result = json.loads(paper.stdout)
+    assert result["simulated_fills"] == expected and result["reconciled"]
+    assert result["wallet"]["usdt_free"] == "10009.58001000"
+    assert result["wallet"]["btc_free"] == "0.00000000"
+    assert result["wallet"]["fees"] == "0.20999000" and result["orders_sent"] == 0
+    if financial_hash is None:
+        financial_hash = result["financial_sha256"]
+    assert result["financial_sha256"] == financial_hash
+    checks.append(
+        {
+            "command": command,
+            "exit_code": paper.returncode,
+            "result": {
+                key: result[key]
+                for key in (
+                    "status",
+                    "simulated_fills",
+                    "total_simulated_fills",
+                    "reconciled",
+                    "financial_sha256",
+                    "wallet",
+                )
+            },
+        }
+    )
 proc = subprocess.run(
     [str(PYTHON), "-I", str(RUNNER), str(SCRIPT), "run-once"],
     cwd=NEUTRAL,

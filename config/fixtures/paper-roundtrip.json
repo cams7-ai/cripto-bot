@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "scenario_id": "roundtrip-v1",
+  "symbol": "BTCUSDT",
+  "rules": {
+    "rule_version": "synthetic-v1",
+    "symbol": "BTCUSDT",
+    "status": "TRADING",
+    "isSpotTradingAllowed": true,
+    "baseAsset": "BTC",
+    "quoteAsset": "USDT",
+    "filters": [
+      {
+        "filterType": "PRICE_FILTER",
+        "minPrice": "0.01",
+        "maxPrice": "1000000",
+        "tickSize": "0.01"
+      },
+      {
+        "filterType": "LOT_SIZE",
+        "minQty": "0.000001",
+        "maxQty": "1000",
+        "stepSize": "0.000001"
+      },
+      {
+        "filterType": "MARKET_LOT_SIZE",
+        "minQty": "0.000001",
+        "maxQty": "1000",
+        "stepSize": "0.000001"
+      },
+      {
+        "filterType": "MIN_NOTIONAL",
+        "minNotional": "10",
+        "applyToMarket": true
+      }
+    ]
+  },
+  "events": [
+    {
+      "event_id": "day-1",
+      "type": "DAY_START",
+      "timestamp": "2026-10-01T00:00:00Z",
+      "observation": {
+        "quote_id": "day-mark",
+        "kind": "REFERENCE",
+        "symbol": "BTCUSDT",
+        "observed_at": "2026-10-01T00:00:00Z",
+        "price": "100"
+      }
+    },
+    {
+      "event_id": "buy",
+      "action_id": "buy",
+      "type": "ORDER",
+      "timestamp": "2026-10-01T00:15:01Z",
+      "side": "BUY",
+      "quantity": "1",
+      "decision_at": "2026-10-01T00:15:00Z",
+      "fill_at": "2026-10-01T00:15:01.001Z",
+      "observation": {
+        "quote_id": "buy-quote",
+        "kind": "REFERENCE",
+        "symbol": "BTCUSDT",
+        "observed_at": "2026-10-01T00:15:01Z",
+        "price": "100"
+      }
+    },
+    {
+      "event_id": "sell",
+      "action_id": "sell",
+      "type": "ORDER",
+      "timestamp": "2026-10-01T00:30:01Z",
+      "side": "SELL",
+      "quantity": "1",
+      "decision_at": "2026-10-01T00:30:00Z",
+      "fill_at": "2026-10-01T00:30:01.001Z",
+      "observation": {
+        "quote_id": "sell-quote",
+        "kind": "REFERENCE",
+        "symbol": "BTCUSDT",
+        "observed_at": "2026-10-01T00:30:01Z",
+        "price": "110"
+      }
+    }
+  ]
+}
