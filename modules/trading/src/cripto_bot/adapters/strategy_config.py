@@ -70,6 +70,8 @@ def strategy_settings(
     coordination: CoordinationInput,
     root: Path,
     contained: Callable[[str, Path], Path],
+    *,
+    evaluation_type: str = "fixture",
 ) -> StrategySettings:
     identifier(item.wallet_id)
     if number(item.initial_usdt) <= 0:
@@ -120,7 +122,7 @@ def strategy_settings(
                 limits(module.limits),
             )
         )
-    validate_modules(tuple(modules))
+    validate_modules(tuple(modules), evaluation_type=evaluation_type)
     fixture = contained(item.fixture_file, root)
     paper = PaperSettings(
         root=root,

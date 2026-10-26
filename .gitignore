@@ -66,3 +66,7 @@ samconfig.toml
 
 # Lock do store financeiro local
 .paper.lock
+
+# Backtest local e lock exclusivo
+.backtest.lock
+config/backtest.sma.public.local.toml

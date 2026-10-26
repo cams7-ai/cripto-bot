@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from cripto_bot.adapters.backtest_config import BacktestInput, backtest_settings
 from cripto_bot.adapters.strategy_config import (
     CoordinationInput,
     ModuleInput,
@@ -81,6 +82,7 @@ class ConfigInput(BaseModel):
     market: MarketInput | None = None
     paper: PaperInput | None = None
     strategy: StrategyInput | None = None
+    backtest: BacktestInput | None = None
     modules: dict[str, ModuleInput] = Field(default_factory=dict)
     coordination: CoordinationInput = Field(default_factory=CoordinationInput)
 
@@ -166,6 +168,25 @@ def load_config(
             raise ConfigError("configuracao modular invalida") from None
         if paper is not None and paper.data_dir == strategy.data_dir:
             raise ConfigError("diretorio financeiro compartilhado")
-    elif parsed.modules or parsed.coordination.model_dump() != CoordinationInput().model_dump():
+    elif parsed.backtest is None and (
+        parsed.modules or parsed.coordination.model_dump() != CoordinationInput().model_dump()
+    ):
         raise ConfigError("configuracao strategy obrigatoria")
-    return Settings(mode=parsed.mode, market=market, paper=paper, strategy=strategy)
+    backtest = None
+    if parsed.backtest is not None:
+        if strategy is not None:
+            raise ConfigError("avaliacoes concorrentes nao suportadas")
+        module_root = application_root() if root is None else root.resolve()
+        try:
+            backtest = backtest_settings(
+                parsed.backtest, parsed.modules, parsed.coordination, module_root, contained
+            )
+        except (ValueError, PaperError):
+            raise ConfigError("configuracao historica invalida") from None
+        if paper is not None and paper.data_dir == backtest.data_dir:
+            raise ConfigError("diretorio financeiro compartilhado")
+        if market is not None and market.data_dir == backtest.data_dir:
+            raise ConfigError("diretorio de mercado compartilhado")
+    return Settings(
+        mode=parsed.mode, market=market, paper=paper, strategy=strategy, backtest=backtest
+    )

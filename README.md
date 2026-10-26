@@ -221,7 +221,7 @@ Desativação conserva monitoramento e custódia: uma posição remanescente fic
 DRAINING, sem venda automática. Mudança material com posição é rejeitada;
 reativação em caixa não executa cruzamentos antigos. As dependências declaradas
 por `depends_on` exigem instância disponível e sem ciclo. Não há import dinâmico.
-TWAP/VWAP, multiativo, backtest completo, ciclo contínuo, parcial/UNKNOWN real,
+TWAP/VWAP, multiativo, ciclo contínuo, parcial/UNKNOWN real,
 AWS e trading privado permanecem fora deste incremento. `run-once` segue NOOP;
 `--allow-network` continua exclusivo da coleta pública explícita.
 
@@ -230,3 +230,27 @@ Documentação: [SMA](../docs/estrategias/trend_sma.md),
 [validação/evidências](../docs/testes/sprint-04-validacao.md),
 [banco v1/v2](../docs/bancos/paper-sqlite.md) e
 [ADR 0005](../docs/decisoes/0005-estrategia-modular-e-persistencia.md).
+
+
+## Backtest histórico — Sprint 05
+
+Somente PAPER/local/BTCUSDT/15m, opt-in. A SMA pura e o núcleo financeiro são compartilhados; o histórico usa dataset validado, protocolo congelado e banco próprio, sem converter carteiras anteriores. Sem módulo habilitado, `backtest-run` retorna NOOP sem carteira.
+
+```bash
+uv run --locked cripto-bot backtest-run --config config/backtest.sma.example.toml
+uv run --locked cripto-bot backtest-prepare --config config/backtest.sma.fixture.toml
+uv run --locked cripto-bot backtest-freeze --config config/backtest.sma.fixture.toml
+uv run --locked cripto-bot backtest-run --config config/backtest.sma.fixture.toml --segment development
+uv run --locked cripto-bot backtest-run --config config/backtest.sma.fixture.toml --segment validation
+uv run --locked cripto-bot backtest-run --config config/backtest.sma.fixture.toml --segment test
+uv run --locked cripto-bot backtest-reconcile --config config/backtest.sma.fixture.toml
+uv run --locked cripto-bot backtest-report --config config/backtest.sma.fixture.toml
+```
+
+A fixture contém 1010 candles sintéticos (50 só para aquecimento), não cotações reais. Cada segmento/variante/perfil começa em 10000 USDT e é independente. HTML/JSON/CSV/manifesto são gerados automaticamente após cada segmento; `backtest-report` reexporta o snapshot em leitura, sem novo sinal/fill. O caminho `html_report` aparece no stdout JSON. Repetição mantém o resultado e não duplica fills.
+
+Para dados reais, executar `collect-market` separadamente, com `config/market.backtest.example.toml`, janelas de até 10000 candles e `--allow-network` explícito. Depois informar os manifestos locais em uma configuração própria; os comandos backtest nunca acessam rede. A coleta não é avaliação. Não reutilizar a fixture curta da 04 como histórico econômico.
+
+O freeze identifica fontes, código, parâmetros, split, custos, risco e modelos. Mudança exige outro protocolo e repetir desenvolvimento/validação; uma janela final real já consumida ou sobreposta não se torna intocada com outro ID. O registro é local e não prova ausência de conhecimento humano prévio. Filtros são proxy sintético declarado; open OHLC não demonstra liquidez/fill real. Posição final permanece marcada, sem venda implícita. Nenhum resultado autoriza LIVE ou inicia a Sprint 06.
+
+DDL, operação/recuperação e limites em `../docs/bancos/backtest-sqlite.md`; protocolo/aceite em `../docs/sprints/sprint-05.md` e `../docs/testes/sprint-05-validacao.md`. Dependências e lock anteriores são mantidos.

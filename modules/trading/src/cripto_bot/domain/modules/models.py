@@ -22,7 +22,7 @@ class ModuleDescriptor:
     kind: str = "strategy"
     parameter_schema: int = 1
     state_schema: int = 1
-    capabilities: tuple[str, ...] = ("local", "PAPER", "fixture", "BTCUSDT", "15m")
+    capabilities: tuple[str, ...] = ("local", "PAPER", "fixture", "backtest", "BTCUSDT", "15m")
     dependencies: tuple[str, ...] = ()
     exclusive_resource: str = "BTCUSDT"
 
@@ -51,11 +51,14 @@ class ModuleConfig:
 
     @property
     def active(self) -> bool:
+        return self.active_for("fixture")
+
+    def active_for(self, evaluation_type: str) -> bool:
         return self.enabled and all(
             (
                 "local" in self.environments,
                 "PAPER" in self.modes,
-                "fixture" in self.evaluation_types,
+                evaluation_type in self.evaluation_types,
                 "BTCUSDT" in self.symbols,
             )
         )
@@ -84,7 +87,9 @@ class StrategySettings:
         }
 
 
-def validate_modules(modules: tuple[ModuleConfig, ...]) -> None:
+def validate_modules(
+    modules: tuple[ModuleConfig, ...], *, evaluation_type: str = "fixture"
+) -> None:
     by_id = {item.instance_id: item for item in modules}
     if len(by_id) != len(modules):
         raise PaperError("DUPLICATE_INSTANCE")
@@ -104,7 +109,7 @@ def validate_modules(modules: tuple[ModuleConfig, ...]) -> None:
         for values, allowed in (
             (item.environments, {"local"}),
             (item.modes, {"PAPER"}),
-            (item.evaluation_types, {"fixture"}),
+            (item.evaluation_types, {evaluation_type}),
             (item.symbols, {"BTCUSDT"}),
         ):
             if set(values) - allowed:
@@ -114,7 +119,7 @@ def validate_modules(modules: tuple[ModuleConfig, ...]) -> None:
             if current in trail:
                 raise PaperError("DEPENDENCY_CYCLE")
             node = by_id.get(current)
-            if node is None or not node.active:
+            if node is None or not node.active_for(evaluation_type):
                 raise PaperError("MISSING_DEPENDENCY")
             for dependency in node.depends_on:
                 visit(dependency, trail | {current})
@@ -122,7 +127,7 @@ def validate_modules(modules: tuple[ModuleConfig, ...]) -> None:
         # A flag com listas vazias nao ativa, mas tambem nao resolve dependencias.
         for dependency in item.depends_on:
             visit(dependency, frozenset({item.instance_id}))
-    if sum(item.active for item in modules) > 1:
+    if sum(item.active_for(evaluation_type) for item in modules) > 1:
         raise PaperError("EXCLUSIVE_OWNER_CONFLICT")
 
 

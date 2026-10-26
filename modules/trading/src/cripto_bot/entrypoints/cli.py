@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from cripto_bot.adapters.config import ConfigError, load_config
 from cripto_bot.application.run_once import run_once
+from cripto_bot.entrypoints.backtest import execute_backtest
 from cripto_bot.entrypoints.market import execute_collection
 from cripto_bot.entrypoints.paper import execute_paper
 from cripto_bot.entrypoints.strategy import execute_strategy
@@ -51,9 +52,21 @@ def main(
             "strategy-run",
             "strategy-report",
             "strategy-reconcile",
+            "backtest-prepare",
+            "backtest-freeze",
+            "backtest-run",
+            "backtest-report",
+            "backtest-reconcile",
         ):
             command = sub.add_parser(name)
             command.add_argument("--config", type=Path)
+            if name == "backtest-run":
+                command.add_argument(
+                    "--segment",
+                    choices=("development", "validation", "test"),
+                    default="development",
+                )
+                command.add_argument("--variant", choices=("all",), default="all")
             if name == "collect-market":
                 command.add_argument("--start", required=True)
                 command.add_argument("--end", required=True)
@@ -70,6 +83,11 @@ def main(
             result = {**common, "status": "VALID"}
         elif args.command == "run-once":
             result = {**common, **asdict(run_once(settings))}
+        elif args.command.startswith("backtest-"):
+            code, historical = execute_backtest(
+                settings, args.command, run_id, getattr(args, "segment", "development")
+            )
+            result = {**common, **historical}
         elif args.command.startswith("strategy-"):
             code, strategy = execute_strategy(settings, args.command, run_id)
             result = {**common, **strategy}

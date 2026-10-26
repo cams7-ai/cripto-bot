@@ -207,6 +207,57 @@ for command, expected in (
         }
     )
 
+# Historico: mesmo console instalado em site-packages, cwd neutro, guard ativo.
+bt_config = scratch / "backtest.toml"
+bt_template = (ROOT / "config/backtest.sma.example.toml").read_text()
+bt_template = bt_template.replace(
+    "config/fixtures/backtest-sma/manifest.json",
+    str(ROOT / "config/fixtures/backtest-sma/manifest.json"),
+)
+bt_template = bt_template.replace(
+    "data/backtest-fixture-dataset", str(scratch / "backtest-dataset")
+)
+bt_template = bt_template.replace("data/backtest-example-v1", str(scratch / "backtest-wallet"))
+bt_config.write_text(bt_template)
+bt_hash = None
+for command, segment in (
+    ("backtest-run", "development"),
+    ("backtest-prepare", None),
+    ("backtest-freeze", None),
+    ("backtest-run", "development"),
+    ("backtest-run", "validation"),
+    ("backtest-run", "test"),
+    ("backtest-reconcile", None),
+    ("backtest-report", None),
+    ("backtest-run", "test"),
+):
+    if command == "backtest-prepare":
+        bt_config.write_text(bt_template.replace("enabled = false", "enabled = true"))
+    argv = [str(PYTHON), "-I", str(RUNNER), str(SCRIPT), command, "--config", str(bt_config)]
+    if segment:
+        argv += ["--segment", segment, "--variant", "all"]
+    bt = subprocess.run(argv, cwd=NEUTRAL, env=env, text=True, capture_output=True, timeout=180)
+    assert bt.returncode == 0, bt.stdout + bt.stderr
+    result = json.loads(bt.stdout)
+    assert result["orders_sent"] == 0
+    if result["status"] == "BACKTEST_NOOP":
+        assert not (scratch / "backtest-wallet").exists()
+    if "manifest" in result:
+        manifest = json.loads(Path(result["manifest"]).read_text())
+        for name, digest in manifest["files"].items():
+            assert (
+                hashlib.sha256((Path(result["manifest"]).parent / name).read_bytes()).hexdigest()
+                == digest
+            )
+    if segment == "test":
+        if bt_hash is None:
+            bt_hash = result["result_sha256"]
+        else:
+            assert bt_hash == result["result_sha256"] and result["simulated_fills"] == 0
+    checks.append(
+        {"command": command, "segment": segment, "exit_code": bt.returncode, "result": result}
+    )
+
 proc = subprocess.run(
     [str(PYTHON), "-I", str(RUNNER), str(SCRIPT), "run-once"],
     cwd=NEUTRAL,

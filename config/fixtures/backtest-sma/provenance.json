@@ -1,0 +1,1 @@
+{"financial_oracle":{"buy_ref":"110","final_equity":"9905.46181258","quantity":"9.072754","sell_ref":"100"},"generator":"50 constant warmup; 10 x 96 candles [100]*50+[110]+[100]*45","source":"fixture"}

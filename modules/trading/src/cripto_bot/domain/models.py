@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
+    from cripto_bot.domain.backtest.models import BacktestSettings
     from cripto_bot.domain.modules.models import StrategySettings
 
 Mode = Literal["PAPER"]
@@ -57,6 +58,7 @@ class Settings:
     market: MarketSettings | None = None
     paper: PaperSettings | None = None
     strategy: StrategySettings | None = None
+    backtest: BacktestSettings | None = None
 
 
 def parse_decimal(value: object) -> Decimal:

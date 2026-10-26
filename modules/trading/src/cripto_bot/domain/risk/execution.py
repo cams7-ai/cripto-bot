@@ -71,6 +71,43 @@ def range_check(value: Decimal, rule: dict[str, object], minimum: str, maximum: 
         raise PaperError("FILTER_RANGE")
 
 
+def quantity_step(supplied: dict[str, dict[str, object]]) -> Decimal:
+    steps = []
+    for name in ("LOT_SIZE", "MARKET_LOT_SIZE"):
+        step = number(supplied[name].get("stepSize"))
+        if step:
+            steps.append(int(step / Q))
+    step = Decimal(lcm(*steps)) * Q if steps else Q
+    return step
+
+
+def execution_price(
+    side: str,
+    quote: dict[str, object],
+    mark: Decimal,
+    parameters: dict[str, object],
+    supplied: dict[str, dict[str, object]],
+) -> Decimal:
+    bps = Decimal("10000")
+    slippage = number(parameters["slippage_bps"]) / bps
+    sign = Decimal(1 if side == "BUY" else -1)
+    if quote["kind"] == "REFERENCE":
+        price = mark * (1 + sign * (number(parameters["spread_bps"]) / (bps * 2) + slippage))
+    else:
+        reference = number(quote["ask"] if side == "BUY" else quote["bid"])
+        price = reference * (1 + sign * slippage)
+    tick = number(supplied["PRICE_FILTER"].get("tickSize"))
+    tick = tick if tick else Q
+    price = (price / tick).to_integral_value(
+        rounding=ROUND_CEILING if side == "BUY" else ROUND_FLOOR
+    ) * tick
+    if price <= 0:
+        raise PaperError("INVALID_PRICE")
+    range_check(price, supplied["PRICE_FILTER"], "minPrice", "maxPrice")
+    bounded(price)
+    return price
+
+
 def make_plan(
     event: dict[str, object], action: str, parameters: dict[str, object], rules: dict[str, object]
 ) -> Plan:
@@ -89,34 +126,14 @@ def make_plan(
             raise PaperError("INVALID_EXECUTION_TIME")
         supplied = filters(rules)
         requested = number(event.get("quantity"))
-        steps = []
-        for name in ("LOT_SIZE", "MARKET_LOT_SIZE"):
-            step = number(supplied[name].get("stepSize"))
-            if step:
-                steps.append(int(step / Q))
-        step = Decimal(lcm(*steps)) * Q if steps else Q
+        step = quantity_step(supplied)
         quantity = (requested / step).to_integral_value(rounding=ROUND_FLOOR) * step
         if quantity <= 0:
             raise PaperError("ZERO_QUANTITY")
         for name in ("LOT_SIZE", "MARKET_LOT_SIZE"):
             range_check(quantity, supplied[name], "minQty", "maxQty")
         bps = Decimal("10000")
-        slippage = number(parameters["slippage_bps"]) / bps
-        sign = Decimal(1 if side == "BUY" else -1)
-        if quote["kind"] == "REFERENCE":
-            price = mark * (1 + sign * (number(parameters["spread_bps"]) / (bps * 2) + slippage))
-        else:
-            reference = number(quote["ask"] if side == "BUY" else quote["bid"])
-            price = reference * (1 + sign * slippage)
-        tick = number(supplied["PRICE_FILTER"].get("tickSize"))
-        tick = tick if tick else Q
-        price = (price / tick).to_integral_value(
-            rounding=ROUND_CEILING if side == "BUY" else ROUND_FLOOR
-        ) * tick
-        if price <= 0:
-            raise PaperError("INVALID_PRICE")
-        range_check(price, supplied["PRICE_FILTER"], "minPrice", "maxPrice")
-        bounded(price)
+        price = execution_price(str(side), quote, mark, parameters, supplied)
         bounded(quantity)
         notional = money(price * quantity, up=side == "BUY")
         if notional <= 0:
