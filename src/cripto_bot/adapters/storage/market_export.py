@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from cripto_bot.adapters.provenance import runtime_identity
 from cripto_bot.adapters.storage.market_sqlite import SQLiteMarketStore
 from cripto_bot.domain.market import PARSER, SCHEMA, MarketError, canonical, digest
 from cripto_bot.observability.logging import utc_now, utc_timestamp
@@ -39,13 +40,7 @@ def code_revision(root: Path) -> str:
 
 
 def source_fingerprint(root: Path) -> str:
-    files = [root / name for name in ("pyproject.toml", "uv.lock", ".python-version")]
-    files.extend(sorted((root / "modules/trading/src/cripto_bot").rglob("*.py")))
-    return digest(
-        canonical(
-            {str(path.relative_to(root)): digest(path.read_bytes()) for path in files}
-        ).encode()
-    )
+    return digest(canonical(runtime_identity(root)).encode())
 
 
 def export_market(

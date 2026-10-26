@@ -3,6 +3,7 @@ from decimal import Decimal as D
 from decimal import getcontext
 
 import pytest
+
 from cripto_bot.domain.portfolio.engine import transition
 from cripto_bot.domain.portfolio.models import (
     PaperError,
@@ -11,7 +12,6 @@ from cripto_bot.domain.portfolio.models import (
     number,
     validate_postings,
 )
-
 from tests.paper_factories import initialized, order
 
 

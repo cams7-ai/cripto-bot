@@ -8,10 +8,10 @@ import sys
 from pathlib import Path
 
 import pytest
+
 from cripto_bot.adapters.storage.market_export import export_market
 from cripto_bot.adapters.storage.market_sqlite import SQLiteMarketStore
 from cripto_bot.domain.market import STEP, MarketError, digest, parse_candle
-
 from tests.factories import BASE, ROOT, raw, sample
 
 

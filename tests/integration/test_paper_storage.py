@@ -7,13 +7,13 @@ from contextlib import closing
 from decimal import Decimal as D
 
 import pytest
+
 from cripto_bot.adapters.execution.paper import PaperExecutor
 from cripto_bot.adapters.storage.paper_report import summary
 from cripto_bot.adapters.storage.paper_sqlite import PaperStore
 from cripto_bot.application.paper_reconcile import reconcile
 from cripto_bot.application.paper_run import run_scenario
 from cripto_bot.domain.portfolio.models import PaperError
-
 from tests.factories import ROOT
 from tests.paper_factories import context, order, scenario, write_case
 

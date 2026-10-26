@@ -6,11 +6,11 @@ import sys
 from contextlib import closing
 
 import pytest
+
 from cripto_bot.adapters.storage.paper_sqlite import PaperStore
 from cripto_bot.adapters.storage.strategy_sqlite import StrategyStore
 from cripto_bot.application.strategy_reconcile import reconcile
 from cripto_bot.domain.portfolio.models import PaperError
-
 from tests.factories import ROOT
 from tests.paper_factories import context
 from tests.strategy_factories import run_case, write_case

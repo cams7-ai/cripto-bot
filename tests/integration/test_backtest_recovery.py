@@ -5,9 +5,9 @@ import subprocess
 import sys
 
 import pytest
+
 from cripto_bot.adapters.storage.backtest_sqlite import BacktestStore
 from cripto_bot.application.backtest_run import curve_context, execute_curve
-
 from tests.unit.test_backtest import ROOT, sealed
 from tests.unit.test_backtest import config as config
 

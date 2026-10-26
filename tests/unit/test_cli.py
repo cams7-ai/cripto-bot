@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from io import StringIO
 
 import pytest
+
 from cripto_bot.entrypoints import cli
 
 

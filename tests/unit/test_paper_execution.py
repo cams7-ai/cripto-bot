@@ -2,9 +2,9 @@ from copy import deepcopy
 from decimal import Decimal as D
 
 import pytest
+
 from cripto_bot.domain.portfolio.models import PaperError
 from cripto_bot.domain.risk.execution import make_plan
-
 from tests.paper_factories import context, order
 
 

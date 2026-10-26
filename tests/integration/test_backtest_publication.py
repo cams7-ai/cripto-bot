@@ -6,11 +6,11 @@ import subprocess
 import sys
 
 import pytest
+
 from cripto_bot.adapters.backtest_dataset import file_hash
 from cripto_bot.adapters.storage.backtest_report import export_report, snapshot
 from cripto_bot.adapters.storage.backtest_sqlite import BacktestStore
 from cripto_bot.application.backtest_run import execute_curve, protocol
-
 from tests.unit.test_backtest import ROOT, context
 from tests.unit.test_backtest import config as config
 

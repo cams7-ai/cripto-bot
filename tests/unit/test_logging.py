@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta, timezone
 from io import StringIO
 
 import pytest
+
 from cripto_bot.observability.logging import emit, utc_now, utc_timestamp
 
 

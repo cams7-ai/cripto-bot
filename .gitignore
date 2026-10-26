@@ -75,3 +75,6 @@ config/backtest.sma.public.local.toml
 *.duckdb
 *.duckdb.wal
 *.parquet
+
+# Ambientes isolados por marco 06A
+.venv-wheel-06a-*/

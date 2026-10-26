@@ -4,11 +4,11 @@ from pathlib import Path
 
 import httpx
 import pytest
+
 from cripto_bot.adapters.binance.public import PublicSource
 from cripto_bot.adapters.config import load_config
 from cripto_bot.adapters.storage import strategy_report
 from cripto_bot.adapters.storage.strategy_sqlite import StrategyStore
-
 from tests.integration.test_paper_cli import invoke
 from tests.strategy_factories import run_case, source, truncated, write_case
 

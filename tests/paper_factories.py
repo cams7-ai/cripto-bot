@@ -4,7 +4,6 @@ import json
 from cripto_bot.domain.models import PaperSettings
 from cripto_bot.domain.portfolio.engine import transition
 from cripto_bot.domain.portfolio.models import MODEL, Wallet, fingerprint
-
 from tests.factories import ROOT
 
 

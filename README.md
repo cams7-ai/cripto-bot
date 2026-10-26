@@ -7,6 +7,39 @@ carteira e execução integral sintética. A Sprint 04 adiciona estratégia SMA 
 em fixture offline, com estado modular, risco centralizado e relatório HTML.
 Nenhuma ordem externa é enviada; todos os módulos começam desabilitados.
 
+## Composição da Sprint 06A
+
+Os fontes do bot agora ficam em `src/cripto_bot`. A biblioteca obrigatória
+`cripto-core==0.1.0` está em `../cripto-core`, com Git/manifest/lock próprios.
+Custos, dimensionamento e SMA puros vêm do core; carteira, risco operacional,
+coordenação, flags e persistência continuam no bot. Os imports antigos delegam
+à fonte única. Não há nova estratégia, modo ou autorização de negociação.
+
+Antes de `uv sync --locked` no bot, disponibilize o artefato local declarado
+no manifest: `../cripto-core/dist/06a-final/cripto_core-0.1.0-py3-none-any.whl`.
+Construa-o na raiz do core com `uv build --offline --out-dir dist/06a-final`
+(backend/dependências precisam estar disponíveis no cache). O lock do bot fixa
+seu hash; não substituir esse artefato silenciosamente. Isso não publica o pacote
+em índice nem permite importar o checkout irmão por `PYTHONPATH`.
+
+O fingerprint inclui controles do consumidor e código efetivamente carregado
+do bot/core, versão e modo de instalação. Core instalado por wheel precisa
+conferir com RECORD; core editable não é suportado por esse protocolo. Mudança
+de composição bloqueia retomada de protocolo congelado; `backtest-report`
+conserva reexportação somente leitura de identidade selada. Dados e registro da
+janela final permanecem no bot; não migrar ou zerar para aceitar código novo.
+
+Smoke por marcos: ambientes `.venv-wheel-06a-layout` e `.venv-wheel-06a-final`,
+artefatos `dist/06a-layout` e `dist/06a-final`; usar respectivamente
+`WHEEL_SMOKE_STAGE=layout` ou `WHEEL_SMOKE_STAGE=final` com
+`uv run --locked --offline python tests/wheel_smoke.py`. O marco layout usa o
+bot anterior à extração, preservado no arquivo de fontes da entrega; para a
+composição atual use final. O harness copia controles/fixtures para uma raiz
+sintética, usa `-I`/guard de sockets e não grava consumo no registro real.
+
+Guia, limitações de cache/instalação e resultados:
+[Sprint 06A](../docs/testes/sprint-06a-validacao.md).
+
 ## Preparação
 
 Raiz funcional: `/home/cams7/Dev/Cripto/cripto-bot`. Requer uv **0.12.19** e Python **3.13.15**.
@@ -153,7 +186,7 @@ Detalhes, resultados e limitações no
 ```bash
 uv run --locked ruff check .
 uv run --locked ruff format --check .
-uv run --locked mypy modules/trading/src
+uv run --locked mypy src
 uv run --locked pytest -q --cov=cripto_bot --cov-branch --cov-report=term-missing
 uv build
 ```

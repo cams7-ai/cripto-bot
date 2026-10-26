@@ -7,6 +7,7 @@ from decimal import Decimal, localcontext
 from pathlib import Path
 
 import pytest
+
 from cripto_bot.adapters.backtest_dataset import file_hash, normalize, prepare, validate
 from cripto_bot.adapters.config import load_config
 from cripto_bot.adapters.storage.backtest_report import document, export_report, snapshot

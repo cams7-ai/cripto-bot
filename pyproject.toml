@@ -9,6 +9,7 @@ description = "Base local PAPER offline para robo Binance Spot"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "cripto-core==0.1.0",
     "pydantic>=2.12,<3",
     "httpx>=0.28,<0.29",
     "duckdb==1.5.6",
@@ -24,14 +25,14 @@ dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.14,<1", "mypy>=1.18,<2"]
 required-version = "==0.12.19"
 
 [tool.setuptools.packages.find]
-where = ["modules/trading/src"]
+where = ["src"]
 include = ["cripto_bot*"]
 namespaces = false
 
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = [".venv-wheel", ".uv-cache", ".wheel-smoke", ".pytest-tmp"]
+extend-exclude = [".venv-wheel", ".uv-cache", ".wheel-smoke", ".pytest-tmp", ".venv-wheel-06a-layout", ".venv-wheel-06a-final"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -48,3 +49,6 @@ markers = ["unit: testes unitarios", "integration: CLI instalada e subprocessos"
 [tool.coverage.run]
 branch = true
 source = ["cripto_bot"]
+
+[tool.uv.sources]
+cripto-core = { path = "../cripto-core/dist/06a-final/cripto_core-0.1.0-py3-none-any.whl" }

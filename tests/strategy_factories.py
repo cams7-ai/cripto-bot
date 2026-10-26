@@ -5,7 +5,6 @@ from pathlib import Path
 from cripto_bot.adapters.config import load_config
 from cripto_bot.domain.market import STEP, iso
 from cripto_bot.entrypoints.strategy import execute_strategy
-
 from tests.factories import ROOT
 
 

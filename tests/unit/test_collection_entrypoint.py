@@ -5,13 +5,13 @@ from pathlib import Path
 
 import httpx
 import pytest
+
 from cripto_bot.adapters.binance.public import PublicSource
 from cripto_bot.adapters.config import ConfigError
 from cripto_bot.adapters.storage.market_sqlite import SQLiteMarketStore
 from cripto_bot.domain.market import STEP
 from cripto_bot.domain.models import MarketSettings, Settings
 from cripto_bot.entrypoints import cli, market
-
 from tests.factories import BASE, ROOT, fixture_file, sample
 
 

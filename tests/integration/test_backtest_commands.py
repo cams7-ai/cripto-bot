@@ -9,7 +9,6 @@ from cripto_bot.adapters.binance.public import PublicSource
 from cripto_bot.domain.models import Settings
 from cripto_bot.entrypoints.backtest import execute_backtest
 from cripto_bot.entrypoints.cli import main
-
 from tests.unit.test_backtest import config as config
 
 

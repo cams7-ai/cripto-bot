@@ -2,6 +2,7 @@ from decimal import Decimal as D
 from decimal import getcontext
 
 import pytest
+
 from cripto_bot.domain.portfolio.models import PaperError
 from cripto_bot.domain.strategy.sma import Snapshot, TrendSMA
 

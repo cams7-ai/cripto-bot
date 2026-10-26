@@ -3,24 +3,32 @@
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT / ".venv-wheel/bin/python"
-SCRIPT = ROOT / ".venv-wheel/bin/cripto-bot"
+STAGE = os.environ.get("WHEEL_SMOKE_STAGE")
+if STAGE not in {"layout", "final"}:
+    raise ValueError("WHEEL_SMOKE_STAGE must be layout or final")
+PYTHON = ROOT / f".venv-wheel-06a-{STAGE}/bin/python"
+SCRIPT = PYTHON.parent / "cripto-bot"
 RUNNER = ROOT / "tests/offline_runner.py"
-NEUTRAL = ROOT / ".wheel-smoke"
-NEUTRAL.mkdir(exist_ok=True)
+NEUTRAL = ROOT / ".wheel-smoke" / f"06a-{STAGE}"
+NEUTRAL.mkdir(parents=True, exist_ok=True)
+# Isolated application root keeps fixture test usage away from the real registry.
+for name in ("pyproject.toml", "uv.lock", ".python-version"):
+    shutil.copyfile(ROOT / name, NEUTRAL / name)
+shutil.copytree(ROOT / "config/fixtures", NEUTRAL / "config/fixtures", dirs_exist_ok=True)
 env = {
     key: value
     for key, value in os.environ.items()
     if not key.startswith("CRIPTO_BOT_")
     and key not in ("BINANCE_API_KEY", "BINANCE_API_SECRET", "PYTHONPATH")
 }
-(wheel,) = (ROOT / "dist").glob("*.whl")
+(wheel,) = (ROOT / "dist" / f"06a-{STAGE}").glob("*.whl")
 with ZipFile(wheel) as archive:
     assert not any(name.startswith("tests/") for name in archive.namelist())
 origin = subprocess.run(
@@ -32,6 +40,26 @@ origin = subprocess.run(
     check=True,
 )
 assert "site-packages/cripto_bot/__init__.py" in origin.stdout
+core_origin = None
+if STAGE == "final":
+    proof = subprocess.run(
+        [
+            str(PYTHON),
+            "-I",
+            str(RUNNER),
+            "--code",
+            "import json,cripto_core;from importlib.metadata import version;"
+            "print(json.dumps({'origin':cripto_core.__file__,'version':version('cripto-core')}))",
+        ],
+        cwd=NEUTRAL,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    core_origin = json.loads(proof.stdout)
+    assert "site-packages/cripto_core/__init__.py" in core_origin["origin"]
+    assert core_origin["version"] == "0.1.0"
 checks = []
 for command in ("check-config", "run-once"):
     proc = subprocess.run(
@@ -64,7 +92,7 @@ scratch = Path(tempfile.mkdtemp(prefix="market-", dir=NEUTRAL))
 config = scratch / "fixture.toml"
 config.write_text(
     'mode="PAPER"\n[market]\nsource="fixture"\n'
-    f'fixture_file="{ROOT / "config/fixtures/market-sample.json"}"\n'
+    f'fixture_file="{NEUTRAL / "config/fixtures/market-sample.json"}"\n'
     f'data_dir="{scratch / "data"}"\n'
 )
 for expected in (2, 0):
@@ -99,7 +127,7 @@ for expected in (2, 0):
 paper_config = scratch / "paper.toml"
 paper_config.write_text(
     'mode="PAPER"\n[paper]\n'
-    f'scenario_file="{ROOT / "config/fixtures/paper-roundtrip.json"}"\n'
+    f'scenario_file="{NEUTRAL / "config/fixtures/paper-roundtrip.json"}"\n'
     f'data_dir="{scratch / "paper-wallet"}"\n'
 )
 financial_hash = None
@@ -148,7 +176,7 @@ for command, expected in (
 sma_template = (ROOT / "config/strategy.sma.example.toml").read_text()
 sma_template = sma_template.replace(
     "config/fixtures/strategy-sma-crossings.json",
-    str(ROOT / "config/fixtures/strategy-sma-crossings.json"),
+    str(NEUTRAL / "config/fixtures/strategy-sma-crossings.json"),
 )
 sma_config = scratch / "strategy.toml"
 sma_config.write_text(sma_template.replace("data/sma-demo", str(scratch / "strategy-wallet")))
@@ -212,7 +240,7 @@ bt_config = scratch / "backtest.toml"
 bt_template = (ROOT / "config/backtest.sma.example.toml").read_text()
 bt_template = bt_template.replace(
     "config/fixtures/backtest-sma/manifest.json",
-    str(ROOT / "config/fixtures/backtest-sma/manifest.json"),
+    str(NEUTRAL / "config/fixtures/backtest-sma/manifest.json"),
 )
 bt_template = bt_template.replace(
     "data/backtest-fixture-dataset", str(scratch / "backtest-dataset")
@@ -288,9 +316,11 @@ assert probe.returncode != 0 and "NETWORK_BLOCKED" in probe.stderr
 print(
     json.dumps(
         {
-            "wheel": wheel.name,
+            "stage": STAGE,
+            "wheel": str(wheel.relative_to(ROOT)),
             "sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
             "origin": origin.stdout.strip(),
+            "core": core_origin,
             "checks": checks,
             "live_exit_code": proc.returncode,
             "socket_probe_blocked": True,

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
+
+from cripto_core.numeric import (
+    parse_decimal as parse_decimal,
+)
 
 if TYPE_CHECKING:
     from cripto_bot.domain.backtest.models import BacktestSettings
@@ -59,16 +62,3 @@ class Settings:
     paper: PaperSettings | None = None
     strategy: StrategySettings | None = None
     backtest: BacktestSettings | None = None
-
-
-def parse_decimal(value: object) -> Decimal:
-    """Aceita exclusivamente texto decimal finito, sem conversao por float."""
-    if not isinstance(value, str):
-        raise ValueError("decimal exige string")
-    try:
-        result = Decimal(value)
-    except InvalidOperation:
-        raise ValueError("decimal invalido") from None
-    if not result.is_finite():
-        raise ValueError("decimal deve ser finito")
-    return result

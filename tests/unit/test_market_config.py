@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 
 import pytest
-from cripto_bot.adapters.config import ConfigError, application_root, contained, load_config
 
+from cripto_bot.adapters.config import ConfigError, application_root, contained, load_config
 from tests.factories import ROOT
 
 

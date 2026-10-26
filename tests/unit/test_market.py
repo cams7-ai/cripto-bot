@@ -2,6 +2,7 @@ import copy
 from decimal import Decimal
 
 import pytest
+
 from cripto_bot.domain.market import (
     STEP,
     MarketError,

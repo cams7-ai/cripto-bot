@@ -1,5 +1,6 @@
 import httpx
 import pytest
+
 from cripto_bot.adapters.binance.public import HOST, MAX_BYTES, Budget, PublicSource
 from cripto_bot.application.ports import RawResponse
 from cripto_bot.domain.market import MarketError

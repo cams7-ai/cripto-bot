@@ -8,11 +8,11 @@ from pathlib import Path
 
 import httpx
 import pytest
+
 from cripto_bot.adapters.binance.public import PublicSource
 from cripto_bot.adapters.config import load_config
 from cripto_bot.adapters.storage.paper_sqlite import PaperStore
 from cripto_bot.entrypoints import cli, paper
-
 from tests.factories import ROOT
 from tests.paper_factories import scenario, write_case
 

@@ -3,6 +3,7 @@ from decimal import Decimal as D
 from pathlib import Path
 
 import pytest
+
 from cripto_bot.adapters.config import load_config
 from cripto_bot.adapters.storage.paper_report import export_report, summary
 from cripto_bot.adapters.storage.paper_sqlite import PaperStore
@@ -12,7 +13,6 @@ from cripto_bot.domain.portfolio.models import PaperError
 from cripto_bot.domain.risk.execution import make_plan
 from cripto_bot.domain.risk.limits import admit
 from cripto_bot.entrypoints import paper
-
 from tests.paper_factories import context, initialized, order, scenario, write_case
 
 

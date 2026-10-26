@@ -1,11 +1,11 @@
 from decimal import Decimal as D
 
 import pytest
+
 from cripto_bot.domain.portfolio.engine import transition
 from cripto_bot.domain.portfolio.models import PaperError, Wallet, day_at, instant
 from cripto_bot.domain.risk.execution import make_plan
 from cripto_bot.domain.risk.limits import admit, update_risk
-
 from tests.paper_factories import context, initialized, order, scenario
 
 

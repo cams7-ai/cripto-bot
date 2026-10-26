@@ -1,9 +1,9 @@
 import json
 
 import pytest
+
 from cripto_bot.adapters.paper_scenario import load_scenario
 from cripto_bot.domain.portfolio.models import PaperError
-
 from tests.paper_factories import scenario
 
 

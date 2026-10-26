@@ -1,12 +1,25 @@
 """Dados Spot puros e contratos estritos para a coleta local."""
 
-import hashlib
-import json
 import re
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import cast
+
+from cripto_core.errors import (
+    MarketError as MarketError,
+)
+from cripto_core.serialization import (
+    canonical as canonical,
+)
+from cripto_core.serialization import (
+    digest as digest,
+)
+from cripto_core.validation import (
+    mapping as mapping,
+)
+from cripto_core.validation import (
+    sequence as sequence,
+)
 
 from cripto_bot.domain.models import parse_decimal
 
@@ -14,30 +27,6 @@ STEP = 900_000
 SCHEMA = 1
 PARSER = "spot-market-v1"
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
-
-
-class MarketError(ValueError):
-    """Codigo local seguro; nao transportar mensagens de servidores."""
-
-
-def canonical(value: object) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
-
-
-def digest(body: bytes) -> str:
-    return hashlib.sha256(body).hexdigest()
-
-
-def mapping(value: object) -> dict[str, object]:
-    if not isinstance(value, dict) or not all(isinstance(k, str) for k in value):
-        raise MarketError("INVALID_OBJECT")
-    return cast(dict[str, object], value)
-
-
-def sequence(value: object) -> list[object]:
-    if not isinstance(value, list):
-        raise MarketError("INVALID_ARRAY")
-    return cast(list[object], value)
 
 
 def integer(value: object) -> int:

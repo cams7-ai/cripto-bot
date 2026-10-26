@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
+
 from cripto_bot.domain.modules.models import monitor_state, resolve
 from cripto_bot.domain.portfolio.models import PaperError
 

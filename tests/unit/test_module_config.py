@@ -3,6 +3,7 @@ import json
 import tomllib
 
 import pytest
+
 from cripto_bot.adapters.config import ConfigError, load_config
 from cripto_bot.adapters.strategy_config import (
     CoordinationInput,
@@ -11,7 +12,6 @@ from cripto_bot.adapters.strategy_config import (
     strategy_settings,
 )
 from cripto_bot.domain.modules.models import REGISTRY
-
 from tests.factories import ROOT
 from tests.strategy_factories import write_case
 

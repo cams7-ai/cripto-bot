@@ -8,6 +8,7 @@ from dataclasses import replace
 from decimal import Decimal
 
 import pytest
+
 from cripto_bot.adapters.backtest_dataset import file_hash, prepare
 from cripto_bot.adapters.storage.backtest_report import export_report, snapshot
 from cripto_bot.adapters.storage.backtest_sqlite import BacktestStore
@@ -15,7 +16,6 @@ from cripto_bot.application.backtest_run import execute_curve, protocol
 from cripto_bot.domain.backtest.engine import reduce
 from cripto_bot.domain.market import STEP, canonical
 from cripto_bot.domain.portfolio.models import PaperError, money
-
 from tests.unit.test_backtest import candle, context, initial, signal
 from tests.unit.test_backtest import config as config
 

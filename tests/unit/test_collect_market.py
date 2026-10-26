@@ -1,12 +1,12 @@
 import json
 
 import pytest
+
 from cripto_bot.adapters.binance.fixture import fixture_source
 from cripto_bot.adapters.binance.public import Budget
 from cripto_bot.adapters.storage.market_sqlite import SQLiteMarketStore
 from cripto_bot.application.collect_market import Progress, collect_market
 from cripto_bot.domain.market import STEP, MarketError
-
 from tests.factories import BASE, fixture_file, raw, sample
 
 

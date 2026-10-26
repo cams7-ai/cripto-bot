@@ -1,6 +1,7 @@
 from decimal import Decimal, getcontext
 
 import pytest
+
 from cripto_bot.domain.models import parse_decimal
 
 
