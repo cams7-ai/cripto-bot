@@ -70,3 +70,8 @@ samconfig.toml
 # Backtest local e lock exclusivo
 .backtest.lock
 config/backtest.sma.public.local.toml
+
+# Projecoes analiticas locais regeneraveis
+*.duckdb
+*.duckdb.wal
+*.parquet

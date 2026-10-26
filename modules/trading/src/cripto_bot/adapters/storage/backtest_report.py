@@ -9,6 +9,7 @@ from decimal import Decimal, localcontext
 from pathlib import Path
 
 from cripto_bot.adapters.backtest_dataset import file_hash
+from cripto_bot.adapters.storage.backtest_analytics import COLUMNS, export_analytics
 from cripto_bot.adapters.storage.backtest_sqlite import BacktestStore
 from cripto_bot.domain.backtest.engine import State
 from cripto_bot.domain.backtest.metrics import ratio_text
@@ -401,7 +402,12 @@ def document(report: dict[str, object]) -> str:
             '<h2>Auditoria e limitações</h2><p><a href="report.json">Relatório'
             ' completo e subperíodos mensais</a> · <a href="equity.csv">Equity'
             ' integral</a> · <a href="trades.csv">Fills</a> · <a href="decisio'
-            'ns.csv">Decisões</a> · <a href="manifest.json">Manifesto de integ'
+            'ns.csv">Decisões</a> · <a href="analytics.duckdb">Catálogo DuckDB</a> · '
+            '<a href="equity.parquet">Equity Parquet</a> · '
+            '<a href="trades.parquet">Fills Parquet</a> · '
+            '<a href="decisions.parquet">Decisões Parquet</a> · '
+            '<a href="analytics.json">Resumo analítico</a> · '
+            '<a href="manifest.json">Manifesto de integ'
             "ridade</a></p><ul>"
         )
         + "".join("<li>" + esc(x) + "</li>" for x in limitations)
@@ -443,52 +449,7 @@ def export_report(store: BacktestStore, report: dict[str, object], run_id: str) 
         (pending / "report.html").write_text(document(report))
         for name, table in (("equity", "equity"), ("trades", "fills"), ("decisions", "decisions")):
             with (pending / f"{name}.csv").open("w", newline="") as stream:
-                if name == "equity":
-                    fields = [
-                        "run_key",
-                        "at",
-                        "equity",
-                        "usdt_free",
-                        "usdt_reserved",
-                        "btc",
-                        "mark",
-                        "cost_basis",
-                        "fees",
-                        "realized",
-                        "unrealized",
-                        "exposure",
-                        "drawdown",
-                    ]
-                elif name == "trades":
-                    fields = [
-                        "run_key",
-                        "action_key",
-                        "fill_id",
-                        "side",
-                        "quantity",
-                        "price",
-                        "notional",
-                        "fee",
-                        "mark",
-                        "fill_at",
-                        "realized_delta",
-                        "cost_delta",
-                        "data_json",
-                    ]
-                else:
-                    fields = [
-                        "run_key",
-                        "decision_id",
-                        "as_of",
-                        "target",
-                        "reason",
-                        "status",
-                        "scheduled_at",
-                        "valid_until",
-                        "budget_cap",
-                        "prefix_sha256",
-                        "data_json",
-                    ]
+                fields = list(COLUMNS[name])
                 writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
                 writer.writeheader()
                 for key, body in store.db.execute(
@@ -503,11 +464,13 @@ def export_report(store: BacktestStore, report: dict[str, object], run_id: str) 
                     if name != "equity":
                         flat["data_json"] = body
                     writer.writerow(flat)
+        analytics = export_analytics(store, report, pending)
         manifest = {
             "schema": 1,
             "model": report["model"],
             "protocol_hash": require_object(report["protocol"])["protocol_hash"],
             "result_sha256": report["result_sha256"],
+            "analytics": analytics,
             "files": {p.name: file_hash(p) for p in sorted(pending.iterdir())},
         }
         (pending / "manifest.json").write_text(canonical(manifest) + "\n")

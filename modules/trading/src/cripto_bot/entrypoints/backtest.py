@@ -40,6 +40,8 @@ def execute_backtest(
                     manifest=str(manifest),
                     html_report=str(manifest.parent / "report.html"),
                     result_sha256=report["result_sha256"],
+                    analytics_database=str(manifest.parent / "analytics.duckdb"),
+                    analytics_manifest=str(manifest.parent / "analytics.json"),
                 )
             elif command == "backtest-reconcile":
                 verify_protocol(store, config)
@@ -55,6 +57,8 @@ def execute_backtest(
                     manifest=str(manifest),
                     html_report=str(manifest.parent / "report.html"),
                     result_sha256=report["result_sha256"],
+                    analytics_database=str(manifest.parent / "analytics.duckdb"),
+                    analytics_manifest=str(manifest.parent / "analytics.json"),
                 )
             return 0, result
     except (

@@ -254,3 +254,41 @@ Para dados reais, executar `collect-market` separadamente, com `config/market.ba
 O freeze identifica fontes, código, parâmetros, split, custos, risco e modelos. Mudança exige outro protocolo e repetir desenvolvimento/validação; uma janela final real já consumida ou sobreposta não se torna intocada com outro ID. O registro é local e não prova ausência de conhecimento humano prévio. Filtros são proxy sintético declarado; open OHLC não demonstra liquidez/fill real. Posição final permanece marcada, sem venda implícita. Nenhum resultado autoriza LIVE ou inicia a Sprint 06.
 
 DDL, operação/recuperação e limites em `../docs/bancos/backtest-sqlite.md`; protocolo/aceite em `../docs/sprints/sprint-05.md` e `../docs/testes/sprint-05-validacao.md`. Dependências e lock anteriores são mantidos.
+
+## Análise histórica com DuckDB + Parquet
+
+`backtest-run` e `backtest-report` publicam também `equity.parquet`,
+`trades.parquet`, `decisions.parquet`, `analytics.duckdb` e `analytics.json`,
+todos cobertos pelo manifesto SHA256. DuckDB 1.5.6 é uma dependência Python
+do lock; instale com `uv sync --locked --group dev`. O bot usa o motor
+embutido e não depende de um serviço Docker ou de porta de rede.
+
+O catálogo contém `curve_summary`, `decisions_counts`, `trades_counts` e `metadata`.
+Os resumos SQL são calculados lendo os Parquets e suas contagens são confrontadas
+com o SQLite e os acumuladores oficiais. Valores financeiros permanecem strings
+exatas; métricas continuam no núcleo Decimal e o ledger SQLite não é migrado.
+CSV/HTML/JSON continuam disponíveis. Falha na conversão impede a publicação do
+export e pode ser repetida via `backtest-report`, sem novos sinais/fills.
+
+Em um diretório de exportação, consulte pelo Docker já instalado:
+
+```bash
+docker run --rm -it \
+  --mount "type=bind,source=$PWD,target=/data,readonly" \
+  -w /data duckdb/duckdb:1.5.6 \
+  duckdb -readonly /data/analytics.duckdb
+```
+
+```sql
+SELECT segment, variant, profile, final_equity, decisions, fills
+FROM curve_summary;
+SELECT run_key, side, count(*)
+FROM read_parquet('/data/trades.parquet')
+GROUP BY run_key, side;
+```
+
+A primeira exportação inclui o custo de conversão; este ajuste não elimina a
+reconciliação financeira em Python nem promete acelerar o replay completo.
+Exportações antigas são preservadas. Para gerar os novos formatos de um banco
+existente, use `backtest-report`; mudanças de código/lock não reabrem a janela
+final para novo experimento. Schema/operação: [camada analítica](../docs/bancos/backtest-analytics.md).

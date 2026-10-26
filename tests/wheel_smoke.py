@@ -244,6 +244,14 @@ for command, segment in (
         assert not (scratch / "backtest-wallet").exists()
     if "manifest" in result:
         manifest = json.loads(Path(result["manifest"]).read_text())
+        assert {
+            "equity.parquet",
+            "trades.parquet",
+            "decisions.parquet",
+            "analytics.duckdb",
+            "analytics.json",
+        } <= manifest["files"].keys()
+        assert manifest["analytics"]["result_sha256"] == result["result_sha256"]
         for name, digest in manifest["files"].items():
             assert (
                 hashlib.sha256((Path(result["manifest"]).parent / name).read_bytes()).hexdigest()
