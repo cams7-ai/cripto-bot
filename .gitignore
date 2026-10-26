@@ -82,3 +82,6 @@ config/backtest.sma.public.local.toml
 .venv-wheel-06b/
 
 .venv-wheel-06c/
+
+# Ambiente instalado isolado da Sprint 06D
+.venv-wheel-06d/

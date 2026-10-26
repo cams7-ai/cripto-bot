@@ -10,6 +10,8 @@ from cripto_market_data.adapters.config import MarketInput as MarketInput
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from cripto_bot.adapters.backtest_config import BacktestInput, backtest_settings
+from cripto_bot.adapters.continuous_config import ContinuousInput
+from cripto_bot.adapters.continuous_config import settings as continuous_settings
 from cripto_bot.adapters.strategy_config import (
     CoordinationInput,
     ModuleInput,
@@ -74,6 +76,7 @@ class ConfigInput(BaseModel):
     paper: PaperInput | None = None
     strategy: StrategyInput | None = None
     backtest: BacktestInput | None = None
+    continuous: ContinuousInput | None = None
     modules: dict[str, ModuleInput] = Field(default_factory=dict)
     coordination: CoordinationInput = Field(default_factory=CoordinationInput)
 
@@ -150,8 +153,10 @@ def load_config(
             raise ConfigError("configuracao modular invalida") from None
         if paper is not None and paper.data_dir == strategy.data_dir:
             raise ConfigError("diretorio financeiro compartilhado")
-    elif parsed.backtest is None and (
-        parsed.modules or parsed.coordination.model_dump() != CoordinationInput().model_dump()
+    elif (
+        parsed.backtest is None
+        and parsed.continuous is None
+        and (parsed.modules or parsed.coordination.model_dump() != CoordinationInput().model_dump())
     ):
         raise ConfigError("configuracao strategy obrigatoria")
     backtest = None
@@ -169,6 +174,32 @@ def load_config(
             raise ConfigError("diretorio financeiro compartilhado")
         if market is not None and market.data_dir == backtest.data_dir:
             raise ConfigError("diretorio de mercado compartilhado")
+    continuous = None
+    if parsed.continuous is not None:
+        if paper is not None or strategy is not None or backtest is not None:
+            raise ConfigError("continuous envelope cannot share financial evaluation")
+        try:
+            module_root = application_root() if root is None else root.resolve()
+            continuous = continuous_settings(
+                parsed.continuous,
+                parsed.modules,
+                parsed.coordination,
+                module_root,
+                contained,
+                environ,
+            )
+            if market is not None and any(
+                market.data_dir.is_relative_to(p) or p.is_relative_to(market.data_dir)
+                for p in [continuous.data_dir, continuous.notification_data_dir]
+            ):
+                raise PaperError("SHARED_CONTINUOUS_DIRECTORY")
+        except (ValueError, PaperError):
+            raise ConfigError("invalid continuous configuration") from None
     return Settings(
-        mode=parsed.mode, market=market, paper=paper, strategy=strategy, backtest=backtest
+        mode=parsed.mode,
+        market=market,
+        paper=paper,
+        strategy=strategy,
+        backtest=backtest,
+        continuous=continuous,
     )

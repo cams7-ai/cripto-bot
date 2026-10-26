@@ -369,3 +369,25 @@ Publicação preserva os dez arquivos históricos, precisão VARCHAR/NULL/BIGINT
 CLI independente `cripto-analytics check-export/query-export` valida e consulta somente exports completos, root absoluto local, catálogo readonly e três views fixas, sem SQL livre/SQLite/coleta. Ver README da biblioteca. Não confundir consulta do snapshot com reconciliação financeira ou nova evidência fora da amostra.
 
 A identidade instalada acrescenta analytics (versão/origem/RECORD/arquivos); alteração isolada bloqueia retomada congelada, sem reescrever protocolo antigo. backtest-report continua readonly da identidade selada. Nenhum reset de banco/registro final para resolver incompatibilidade. Resultados, cache/custos/limitações e rollback no [guia 06C](../docs/testes/sprint-06c-validacao.md).
+
+## PAPER contínuo — Sprint 06D
+
+`config/continuous.example.toml` mantém os dois níveis de habilitação desativados.
+O novo modelo `paper-continuous-v1` tem journal próprio, reservas/execuções parciais,
+controle durável e fila de entrega independente. Não altera o executor integral,
+a carteira modular anterior ou o registro de uso final de backtests.
+
+Comandos: `continuous-prepare`, `continuous-run [--once] [--allow-network]`,
+`continuous-reconcile`, `continuous-report [--day YYYY-MM-DD]`,
+`continuous-control --action pause|resume|kill|disable|reload|cancel --reason TEXT
+[--order-id ID] [--request-id ID]`, `notify-drain [--once] [--allow-send]`.
+Todos aceitam `--config FILE`. São exclusivos de PAPER; `orders_sent=0`.
+Os opt-ins técnicos não substituem autorização para o piloto ou destinatários.
+
+O renderer adicional exige `cripto-analytics==0.1.1`, wheel em
+`../cripto-analytics/dist/06d-final/`; core/data/DuckDB e demais pins são preservados.
+O parágrafo da 06C acima registra a composição anterior, não o pin atual.
+Consulte o [runbook](../docs/operacao/continuous-runbook.md), a
+[API](../docs/api/continuous.md), os [bancos](../docs/bancos/README.md) e o
+[guia de validação](../docs/testes/sprint-06d-validacao.md).
+Software validado offline não comprova sete dias ou entregas reais.

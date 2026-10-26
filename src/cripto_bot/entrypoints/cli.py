@@ -13,6 +13,7 @@ from uuid import uuid4
 from cripto_bot.adapters.config import ConfigError, load_config
 from cripto_bot.application.run_once import run_once
 from cripto_bot.entrypoints.backtest import execute_backtest
+from cripto_bot.entrypoints.continuous import execute_continuous
 from cripto_bot.entrypoints.market import execute_collection
 from cripto_bot.entrypoints.paper import execute_paper
 from cripto_bot.entrypoints.strategy import execute_strategy
@@ -57,9 +58,32 @@ def main(
             "backtest-run",
             "backtest-report",
             "backtest-reconcile",
+            "continuous-prepare",
+            "continuous-run",
+            "continuous-reconcile",
+            "continuous-report",
+            "continuous-control",
+            "notify-drain",
         ):
             command = sub.add_parser(name)
             command.add_argument("--config", type=Path)
+            if name in {"continuous-run", "notify-drain"}:
+                command.add_argument("--once", action="store_true")
+            if name == "continuous-run":
+                command.add_argument("--allow-network", action="store_true")
+            if name == "notify-drain":
+                command.add_argument("--allow-send", action="store_true")
+            if name == "continuous-report":
+                command.add_argument("--day")
+            if name == "continuous-control":
+                command.add_argument(
+                    "--action",
+                    choices=("pause", "resume", "kill", "disable", "reload", "cancel"),
+                    required=True,
+                )
+                command.add_argument("--reason", required=True)
+                command.add_argument("--order-id")
+                command.add_argument("--request-id")
             if name == "backtest-run":
                 command.add_argument(
                     "--segment",
@@ -83,6 +107,21 @@ def main(
             result = {**common, "status": "VALID"}
         elif args.command == "run-once":
             result = {**common, **asdict(run_once(settings))}
+        elif args.command.startswith("continuous-") or args.command == "notify-drain":
+            code, continuous = execute_continuous(
+                settings,
+                args.command,
+                run_id,
+                allow_network=getattr(args, "allow_network", False),
+                once=getattr(args, "once", False),
+                allow_send=getattr(args, "allow_send", False),
+                action=getattr(args, "action", None),
+                reason=getattr(args, "reason", None),
+                order_id=getattr(args, "order_id", None),
+                request_id=getattr(args, "request_id", None),
+                day=getattr(args, "day", None),
+            )
+            result = {**common, **continuous}
         elif args.command.startswith("backtest-"):
             code, historical = execute_backtest(
                 settings, args.command, run_id, getattr(args, "segment", "development")

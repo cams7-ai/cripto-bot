@@ -26,10 +26,10 @@ def installed_analytics(tmp_path, monkeypatch):
     package.mkdir()
     source = package / "__init__.py"
     source.write_text("# original analytics fixture\n")
-    info = tmp_path / "cripto_analytics-0.1.0.dist-info"
+    info = tmp_path / "cripto_analytics-0.1.1.dist-info"
     info.mkdir()
     (info / "METADATA").write_text(
-        "Metadata-Version: 2.3\nName: cripto-analytics\nVersion: 0.1.0\n"
+        "Metadata-Version: 2.3\nName: cripto-analytics\nVersion: 0.1.1\n"
     )
 
     def seal():
@@ -75,13 +75,13 @@ def test_analytics_record_version_and_editable_rejected(installed_analytics):
         provenance.package_identity("cripto_analytics", "9.0.0")
     source.write_text("# modified without updating RECORD\n")
     with pytest.raises(PaperError, match="PACKAGE_RECORD_MISMATCH"):
-        provenance.package_identity("cripto_analytics", "0.1.0")
+        provenance.package_identity("cripto_analytics", "0.1.1")
     seal()
     (info / "direct_url.json").write_text(
         json.dumps({"url": source.parent.parent.as_uri(), "dir_info": {"editable": True}})
     )
     with pytest.raises(PaperError, match="UNSUPPORTED_PACKAGE_INSTALLATION"):
-        provenance.package_identity("cripto_analytics", "0.1.0")
+        provenance.package_identity("cripto_analytics", "0.1.1")
 
 
 def test_cli_defaults_do_not_load_duckdb():

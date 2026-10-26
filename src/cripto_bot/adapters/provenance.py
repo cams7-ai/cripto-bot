@@ -36,7 +36,7 @@ def runtime_identity(root: Path) -> dict[str, object]:
             "cripto_bot": package_identity("cripto_bot"),
             "cripto_core": package_identity("cripto_core", "0.1.0"),
             "cripto_market_data": package_identity("cripto_market_data", "0.1.0"),
-            "cripto_analytics": package_identity("cripto_analytics", "0.1.0"),
+            "cripto_analytics": package_identity("cripto_analytics", "0.1.1"),
         },
     }
 

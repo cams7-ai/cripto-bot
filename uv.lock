@@ -72,14 +72,14 @@ wheels = [
 
 [[package]]
 name = "cripto-analytics"
-version = "0.1.0"
-source = { path = "../cripto-analytics/dist/06c-final/cripto_analytics-0.1.0-py3-none-any.whl" }
+version = "0.1.1"
+source = { path = "../cripto-analytics/dist/06d-final/cripto_analytics-0.1.1-py3-none-any.whl" }
 dependencies = [
     { name = "cripto-core" },
     { name = "duckdb" },
 ]
 wheels = [
-    { filename = "cripto_analytics-0.1.0-py3-none-any.whl", hash = "sha256:599619f53cdf46ac3d01f15edc1f2f9895c9ca62cbbae1d9546662f79608b4ba" },
+    { filename = "cripto_analytics-0.1.1-py3-none-any.whl", hash = "sha256:d03e6b27eac6f97da63f86eb797045a73642c072796c8434a79469a8d8ef8255" },
 ]
 
 [package.metadata]
@@ -110,7 +110,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cripto-analytics", path = "../cripto-analytics/dist/06c-final/cripto_analytics-0.1.0-py3-none-any.whl" },
+    { name = "cripto-analytics", path = "../cripto-analytics/dist/06d-final/cripto_analytics-0.1.1-py3-none-any.whl" },
     { name = "cripto-core", path = "../cripto-core/dist/06a-final/cripto_core-0.1.0-py3-none-any.whl" },
     { name = "cripto-market-data", path = "../cripto-market-data/dist/06b-final/cripto_market_data-0.1.0-py3-none-any.whl" },
     { name = "httpx", specifier = ">=0.28,<0.29" },

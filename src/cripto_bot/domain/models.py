@@ -12,6 +12,7 @@ from cripto_core.numeric import (
 from cripto_market_data.domain.settings import MarketSettings as MarketSettings
 
 if TYPE_CHECKING:
+    from cripto_bot.adapters.continuous_config import ContinuousSettings
     from cripto_bot.domain.backtest.models import BacktestSettings
     from cripto_bot.domain.modules.models import StrategySettings
 
@@ -51,3 +52,4 @@ class Settings:
     paper: PaperSettings | None = None
     strategy: StrategySettings | None = None
     backtest: BacktestSettings | None = None
+    continuous: ContinuousSettings | None = None

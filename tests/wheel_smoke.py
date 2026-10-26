@@ -11,16 +11,16 @@ from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 STAGE = os.environ.get("WHEEL_SMOKE_STAGE")
-if STAGE not in {"layout", "final", "06b", "06c"}:
+if STAGE not in {"layout", "final", "06b", "06c", "06d"}:
     raise ValueError("WHEEL_SMOKE_STAGE must be layout, final, 06b or 06c")
 PYTHON = ROOT / (
     f".venv-wheel-{STAGE}/bin/python"
-    if STAGE in {"06b", "06c"}
+    if STAGE in {"06b", "06c", "06d"}
     else f".venv-wheel-06a-{STAGE}/bin/python"
 )
 SCRIPT = PYTHON.parent / "cripto-bot"
 RUNNER = ROOT / "tests/offline_runner.py"
-NEUTRAL = ROOT / ".wheel-smoke" / (STAGE if STAGE in {"06b", "06c"} else f"06a-{STAGE}")
+NEUTRAL = ROOT / ".wheel-smoke" / (STAGE if STAGE in {"06b", "06c", "06d"} else f"06a-{STAGE}")
 NEUTRAL.mkdir(parents=True, exist_ok=True)
 # Isolated application root keeps fixture test usage away from the real registry.
 for name in ("pyproject.toml", "uv.lock", ".python-version"):
@@ -32,9 +32,9 @@ env = {
     if not key.startswith("CRIPTO_BOT_")
     and key not in ("BINANCE_API_KEY", "BINANCE_API_SECRET", "PYTHONPATH")
 }
-(wheel,) = (ROOT / "dist" / (f"{STAGE}-final" if STAGE in {"06b", "06c"} else f"06a-{STAGE}")).glob(
-    "*.whl"
-)
+(wheel,) = (
+    ROOT / "dist" / (f"{STAGE}-final" if STAGE in {"06b", "06c", "06d"} else f"06a-{STAGE}")
+).glob("*.whl")
 with ZipFile(wheel) as archive:
     assert not any(name.startswith("tests/") for name in archive.namelist())
 origin = subprocess.run(
@@ -47,7 +47,7 @@ origin = subprocess.run(
 )
 assert "site-packages/cripto_bot/__init__.py" in origin.stdout
 core_origin = None
-if STAGE in {"final", "06b", "06c"}:
+if STAGE in {"final", "06b", "06c", "06d"}:
     proof = subprocess.run(
         [
             str(PYTHON),
@@ -67,7 +67,7 @@ if STAGE in {"final", "06b", "06c"}:
     assert "site-packages/cripto_core/__init__.py" in core_origin["origin"]
     assert core_origin["version"] == "0.1.0"
 market_origin = None
-if STAGE in {"06b", "06c"}:
+if STAGE in {"06b", "06c", "06d"}:
     proof = subprocess.run(
         [
             str(PYTHON),
@@ -88,7 +88,7 @@ if STAGE in {"06b", "06c"}:
     assert "site-packages/cripto_market_data/__init__.py" in market_origin["origin"]
     assert market_origin["version"] == "0.1.0"
 analytics_origin = None
-if STAGE == "06c":
+if STAGE in {"06c", "06d"}:
     proof = subprocess.run(
         [
             str(PYTHON),
@@ -106,7 +106,7 @@ if STAGE == "06c":
     )
     analytics_origin = json.loads(proof.stdout)
     assert "site-packages/cripto_analytics/__init__.py" in analytics_origin["origin"]
-    assert analytics_origin["version"] == "0.1.0"
+    assert analytics_origin["version"] == ("0.1.1" if STAGE == "06d" else "0.1.0")
 checks = []
 for command in ("check-config", "run-once"):
     proc = subprocess.run(

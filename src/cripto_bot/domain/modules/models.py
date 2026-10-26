@@ -22,7 +22,15 @@ class ModuleDescriptor:
     kind: str = "strategy"
     parameter_schema: int = 1
     state_schema: int = 1
-    capabilities: tuple[str, ...] = ("local", "PAPER", "fixture", "backtest", "BTCUSDT", "15m")
+    capabilities: tuple[str, ...] = (
+        "local",
+        "PAPER",
+        "fixture",
+        "backtest",
+        "continuous",
+        "BTCUSDT",
+        "15m",
+    )
     dependencies: tuple[str, ...] = ()
     exclusive_resource: str = "BTCUSDT"
 
@@ -104,7 +112,10 @@ def validate_modules(
         descriptor = REGISTRY.get(item.module_id)
         if descriptor is None or descriptor.version != item.version:
             raise PaperError("UNIMPLEMENTED_MODULE")
-        if item.execution != "immediate" or item.on_disable != "hold_and_monitor":
+        if (
+            item.execution != ("paper_bounded" if evaluation_type == "continuous" else "immediate")
+            or item.on_disable != "hold_and_monitor"
+        ):
             raise PaperError("UNSUPPORTED_CAPABILITY")
         for values, allowed in (
             (item.environments, {"local"}),

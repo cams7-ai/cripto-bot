@@ -1,0 +1,46 @@
+mode = "PAPER"
+
+[continuous]
+enabled = false
+environment = "local"
+evaluation_type = "continuous"
+pilot_id = "continuous-demo"
+wallet_id = "continuous-demo"
+data_dir = "data/continuous-demo"
+market_data_dir = "data/continuous-market"
+notification_data_dir = "data/continuous-delivery"
+source = "binance_public"
+initial_usdt = "10000.00"
+fee_bps = "10"
+slippage_bps = "5"
+max_entry_fraction = "0.10"
+max_exposure_fraction = "0.10"
+max_daily_loss_fraction = "0.01"
+max_drawdown_fraction = "0.05"
+max_quote_age_ms = 5000
+
+[continuous.notifications]
+enabled = false
+integration_mode = "LOCAL"
+whatsapp_enabled = false
+# Definir serviços loopback e destinatários autorizados antes do preparo operacional.
+# mail_sender_url = "http://127.0.0.1:8002"
+# mail_to = "teste@example.invalid"
+# whatsapp_notify_url = "http://127.0.0.1:8003"
+# whatsapp_contact = "destinatario-de-teste"
+
+[modules.trend_btc]
+module_id = "trend_sma"
+enabled = false
+environments = ["local"]
+modes = ["PAPER"]
+evaluation_types = ["continuous"]
+symbols = ["BTCUSDT"]
+capital_weight = "0.10"
+execution = "paper_bounded"
+on_disable = "hold_and_monitor"
+
+[modules.trend_btc.params]
+fast_window = 20
+slow_window = 50
+interval = "15m"
