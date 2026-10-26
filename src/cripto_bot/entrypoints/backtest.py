@@ -2,6 +2,7 @@
 
 import sqlite3
 
+from cripto_bot.adapters.analytics_dependency import require_analytics
 from cripto_bot.adapters.backtest_dataset import prepare
 from cripto_bot.adapters.storage.backtest_report import export_report, snapshot
 from cripto_bot.adapters.storage.backtest_sqlite import BacktestStore
@@ -20,6 +21,8 @@ def execute_backtest(
     if config is None or config.module is None:
         return 0, {**result, "status": "BACKTEST_NOOP"}
     try:
+        if command in {"backtest-run", "backtest-report"}:
+            require_analytics(engine=True)
         if command == "backtest-prepare":
             return 0, {**result, "status": "BACKTEST_PREPARED", "dataset": prepare(config)}
         with BacktestStore(

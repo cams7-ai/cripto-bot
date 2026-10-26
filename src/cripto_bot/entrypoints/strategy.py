@@ -3,6 +3,7 @@
 import json
 import sqlite3
 
+from cripto_bot.adapters.analytics_dependency import require_analytics
 from cripto_bot.adapters.config import ConfigError
 from cripto_bot.adapters.storage.market_export import code_revision, source_fingerprint
 from cripto_bot.adapters.storage.strategy_report import diagnostic, export_report, summary
@@ -52,6 +53,8 @@ def execute_strategy(
         except PaperError:
             raise ConfigError("fixture de estrategia invalida") from None
     try:
+        if command != "strategy-reconcile":
+            require_analytics()
         with StrategyStore(
             config.data_dir, create=command == "strategy-run", readonly=command == "strategy-report"
         ) as store:

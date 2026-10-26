@@ -356,3 +356,16 @@ reconciliação financeira em Python nem promete acelerar o replay completo.
 Exportações antigas são preservadas. Para gerar os novos formatos de um banco
 existente, use `backtest-report`; mudanças de código/lock não reabrem a janela
 final para novo experimento. Schema/operação: [camada analítica](../docs/bancos/backtest-analytics.md).
+
+
+## Composição analítica — Sprint 06C
+
+Relatórios são publicados por `cripto-analytics==0.1.0`, consumido pelo wheel local `../cripto-analytics/dist/06c-final/cripto_analytics-0.1.0-py3-none-any.whl`. DuckDB 1.5.6 passa a dependência transitiva dessa biblioteca. Core/dados e seus artefatos anteriores permanecem iguais. `uv sync --locked --group dev --offline` mantém o perfil local padrão; comandos existentes não exigem extra ou flag novos.
+
+`AnalyticsRows` é adapter readonly do bot: fornece linhas em ordem run_key/rowid, flatten de plan/data_json original e contagens da mesma visão reconciliada. Biblioteca não recebe store.db/Wallet/State. Summary/diagnostic, snapshot/_series, métricas oficiais Decimal, ledger, risco, reconciliação e controle da janela final continuam no bot. Fachadas antigas mantêm assinaturas e patch hooks; nenhuma segunda implementação de renderer/conversão.
+
+Publicação preserva os dez arquivos históricos, precisão VARCHAR/NULL/BIGINT/UTC/export_row, modelos/manifestos e atomicidade. Paper manual permanece JSON, estratégia JSON/HTML. Dependência obrigatória ausente retorna ANALYTICS_DEPENDENCY_UNAVAILABLE/exit3 antes da mutação no fluxo de execução que exige relatório. Domínio/check-config/NOOP não carregam DuckDB. Erros de publicação preservam o estado confirmado e permitem reexportar sem novos fills.
+
+CLI independente `cripto-analytics check-export/query-export` valida e consulta somente exports completos, root absoluto local, catálogo readonly e três views fixas, sem SQL livre/SQLite/coleta. Ver README da biblioteca. Não confundir consulta do snapshot com reconciliação financeira ou nova evidência fora da amostra.
+
+A identidade instalada acrescenta analytics (versão/origem/RECORD/arquivos); alteração isolada bloqueia retomada congelada, sem reescrever protocolo antigo. backtest-report continua readonly da identidade selada. Nenhum reset de banco/registro final para resolver incompatibilidade. Resultados, cache/custos/limitações e rollback no [guia 06C](../docs/testes/sprint-06c-validacao.md).

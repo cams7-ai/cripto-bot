@@ -12,6 +12,10 @@ from cripto_market_data.adapters.inspection import inspect_package
 
 
 def package_identity(name: str, expected_version: str | None = None) -> dict[str, object]:
+    if name == "cripto_analytics":
+        from cripto_bot.adapters.analytics_dependency import require_analytics
+
+        require_analytics()
     return inspect_package(
         name, expected_version, importer=import_module, editable_names=frozenset({"cripto_bot"})
     )
@@ -32,6 +36,7 @@ def runtime_identity(root: Path) -> dict[str, object]:
             "cripto_bot": package_identity("cripto_bot"),
             "cripto_core": package_identity("cripto_core", "0.1.0"),
             "cripto_market_data": package_identity("cripto_market_data", "0.1.0"),
+            "cripto_analytics": package_identity("cripto_analytics", "0.1.0"),
         },
     }
 

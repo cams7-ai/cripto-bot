@@ -1,15 +1,10 @@
 """Relatorios derivados: nenhuma operação de execução ou correção de saldo."""
 
 import json
-import os
-import re
-import shutil
-import tempfile
 from decimal import Decimal, localcontext
 from pathlib import Path
 
 from cripto_bot.adapters.storage.paper_sqlite import PaperStore
-from cripto_bot.domain.market import canonical, digest
 from cripto_bot.domain.portfolio.models import (
     MODEL,
     PaperError,
@@ -94,34 +89,13 @@ def diagnostic(store: PaperStore) -> dict[str, object]:
 def export_report(
     store: PaperStore, report: dict[str, object], run_id: str, provenance: dict[str, object]
 ) -> Path:
-    parent = store.directory / "reports"
-    if not parent.resolve().is_relative_to(store.directory.resolve()) or not re.fullmatch(
-        r"[A-Za-z0-9-]{1,64}", run_id
-    ):
-        raise PaperError("UNSAFE_REPORT_PATH")
-    parent.mkdir(exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix=".pending-", dir=parent))
-    try:
-        body = (canonical(report) + "\n").encode()
-        with (temporary / "report.json").open("wb") as stream:
-            stream.write(body)
-            stream.flush()
-            os.fsync(stream.fileno())
-        manifest = {
-            **provenance,
-            "model": MODEL,
-            "financial_sha256": report["financial_sha256"],
-            "run_id": run_id,
-            "complete": True,
-            "files": {"report.json": digest(body)},
-        }
-        with (temporary / "manifest.json").open("w") as stream:
-            stream.write(canonical(manifest) + "\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        target = parent / run_id
-        temporary.rename(target)
-        return target / "manifest.json"
-    except BaseException:
-        shutil.rmtree(temporary)
-        raise
+    from typing import cast
+
+    from cripto_bot.adapters.analytics_dependency import load
+
+    return cast(
+        Path,
+        load("cripto_analytics.application.publish").publish_paper(
+            store.directory, report, run_id, provenance, model=MODEL
+        ),
+    )

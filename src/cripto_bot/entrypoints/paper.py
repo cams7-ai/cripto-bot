@@ -2,6 +2,7 @@
 
 import sqlite3
 
+from cripto_bot.adapters.analytics_dependency import require_analytics
 from cripto_bot.adapters.config import ConfigError
 from cripto_bot.adapters.execution.paper import PaperExecutor
 from cripto_bot.adapters.paper_scenario import load_scenario
@@ -44,6 +45,8 @@ def execute_paper(settings: Settings, command: str, run_id: str) -> tuple[int, d
     }
     counts = {"simulated_fills": 0, "rejected_intents": 0, "replayed_actions": 0}
     try:
+        if command == "paper-run":
+            require_analytics()
         with PaperStore(
             config.data_dir, create=command == "paper-run", readonly=command == "paper-report"
         ) as store:

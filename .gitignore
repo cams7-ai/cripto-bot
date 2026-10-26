@@ -80,3 +80,5 @@ config/backtest.sma.public.local.toml
 .venv-wheel-06a-*/
 
 .venv-wheel-06b/
+
+.venv-wheel-06c/
