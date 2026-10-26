@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "cripto-core==0.1.0",
+    "cripto-market-data==0.1.0",
     "pydantic>=2.12,<3",
     "httpx>=0.28,<0.29",
     "duckdb==1.5.6",
@@ -32,7 +33,7 @@ namespaces = false
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = [".venv-wheel", ".uv-cache", ".wheel-smoke", ".pytest-tmp", ".venv-wheel-06a-layout", ".venv-wheel-06a-final"]
+extend-exclude = [".venv-wheel", ".uv-cache", ".wheel-smoke", ".pytest-tmp", ".venv-wheel-06a-layout", ".venv-wheel-06a-final", ".venv-wheel-06b"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -52,3 +53,5 @@ source = ["cripto_bot"]
 
 [tool.uv.sources]
 cripto-core = { path = "../cripto-core/dist/06a-final/cripto_core-0.1.0-py3-none-any.whl" }
+
+cripto-market-data = { path = "../cripto-market-data/dist/06b-final/cripto_market_data-0.1.0-py3-none-any.whl" }

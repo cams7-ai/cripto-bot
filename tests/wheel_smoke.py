@@ -11,12 +11,14 @@ from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 STAGE = os.environ.get("WHEEL_SMOKE_STAGE")
-if STAGE not in {"layout", "final"}:
-    raise ValueError("WHEEL_SMOKE_STAGE must be layout or final")
-PYTHON = ROOT / f".venv-wheel-06a-{STAGE}/bin/python"
+if STAGE not in {"layout", "final", "06b"}:
+    raise ValueError("WHEEL_SMOKE_STAGE must be layout, final or 06b")
+PYTHON = ROOT / (
+    ".venv-wheel-06b/bin/python" if STAGE == "06b" else f".venv-wheel-06a-{STAGE}/bin/python"
+)
 SCRIPT = PYTHON.parent / "cripto-bot"
 RUNNER = ROOT / "tests/offline_runner.py"
-NEUTRAL = ROOT / ".wheel-smoke" / f"06a-{STAGE}"
+NEUTRAL = ROOT / ".wheel-smoke" / ("06b" if STAGE == "06b" else f"06a-{STAGE}")
 NEUTRAL.mkdir(parents=True, exist_ok=True)
 # Isolated application root keeps fixture test usage away from the real registry.
 for name in ("pyproject.toml", "uv.lock", ".python-version"):
@@ -28,7 +30,7 @@ env = {
     if not key.startswith("CRIPTO_BOT_")
     and key not in ("BINANCE_API_KEY", "BINANCE_API_SECRET", "PYTHONPATH")
 }
-(wheel,) = (ROOT / "dist" / f"06a-{STAGE}").glob("*.whl")
+(wheel,) = (ROOT / "dist" / ("06b-final" if STAGE == "06b" else f"06a-{STAGE}")).glob("*.whl")
 with ZipFile(wheel) as archive:
     assert not any(name.startswith("tests/") for name in archive.namelist())
 origin = subprocess.run(
@@ -41,7 +43,7 @@ origin = subprocess.run(
 )
 assert "site-packages/cripto_bot/__init__.py" in origin.stdout
 core_origin = None
-if STAGE == "final":
+if STAGE in {"final", "06b"}:
     proof = subprocess.run(
         [
             str(PYTHON),
@@ -60,6 +62,27 @@ if STAGE == "final":
     core_origin = json.loads(proof.stdout)
     assert "site-packages/cripto_core/__init__.py" in core_origin["origin"]
     assert core_origin["version"] == "0.1.0"
+market_origin = None
+if STAGE == "06b":
+    proof = subprocess.run(
+        [
+            str(PYTHON),
+            "-I",
+            str(RUNNER),
+            "--code",
+            "import json,cripto_market_data;from importlib.metadata import version;"
+            "print(json.dumps({'origin':cripto_market_data.__file__,"
+            "'version':version('cripto-market-data')}))",
+        ],
+        cwd=NEUTRAL,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    market_origin = json.loads(proof.stdout)
+    assert "site-packages/cripto_market_data/__init__.py" in market_origin["origin"]
+    assert market_origin["version"] == "0.1.0"
 checks = []
 for command in ("check-config", "run-once"):
     proc = subprocess.run(
@@ -321,6 +344,7 @@ print(
             "sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
             "origin": origin.stdout.strip(),
             "core": core_origin,
+            "market_data": market_origin,
             "checks": checks,
             "live_exit_code": proc.returncode,
             "socket_probe_blocked": True,

@@ -78,3 +78,5 @@ config/backtest.sma.public.local.toml
 
 # Ambientes isolados por marco 06A
 .venv-wheel-06a-*/
+
+.venv-wheel-06b/

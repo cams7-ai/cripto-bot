@@ -5,6 +5,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
+from cripto_market_data.adapters.config import MarketConfigError, market_settings
+from cripto_market_data.adapters.config import MarketInput as MarketInput
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from cripto_bot.adapters.backtest_config import BacktestInput, backtest_settings
@@ -14,23 +16,12 @@ from cripto_bot.adapters.strategy_config import (
     StrategyInput,
     strategy_settings,
 )
-from cripto_bot.domain.models import MarketSettings, PaperSettings, Settings
+from cripto_bot.domain.models import PaperSettings, Settings
 from cripto_bot.domain.portfolio.models import PaperError, identifier, number
 
 
 class ConfigError(ValueError):
     """Diagnostico fixo, sem valores recebidos."""
-
-
-class MarketInput(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True, hide_input_in_errors=True)
-    source: Literal["fixture", "binance_public"]
-    symbol: Literal["BTCUSDT"] = "BTCUSDT"
-    interval: Literal["15m"] = "15m"
-    fixture_file: str | None = None
-    data_dir: str
-    page_limit: int = Field(default=1000, ge=1, le=1000)
-    max_pages: int = Field(default=10, ge=1, le=10)
 
 
 def application_root() -> Path:
@@ -115,20 +106,11 @@ def load_config(
     if parsed.market is not None:
         item = parsed.market
         module_root = application_root() if root is None else root.resolve()
-        if (item.source == "fixture") != (item.fixture_file is not None):
-            raise ConfigError("fixture inconsistente")
-        market = MarketSettings(
-            source=item.source,
-            root=module_root,
-            data_dir=contained(item.data_dir, module_root),
-            fixture_file=None
-            if item.fixture_file is None
-            else contained(item.fixture_file, module_root),
-            symbol=item.symbol,
-            interval=item.interval,
-            page_limit=item.page_limit,
-            max_pages=item.max_pages,
-        )
+        try:
+            market = market_settings(item, module_root, contained)
+        except MarketConfigError:
+            raise ConfigError("fixture inconsistente") from None
+
     paper = None
     if parsed.paper is not None:
         item_paper = parsed.paper

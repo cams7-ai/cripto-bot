@@ -9,24 +9,13 @@ from typing import TYPE_CHECKING, Literal
 from cripto_core.numeric import (
     parse_decimal as parse_decimal,
 )
+from cripto_market_data.domain.settings import MarketSettings as MarketSettings
 
 if TYPE_CHECKING:
     from cripto_bot.domain.backtest.models import BacktestSettings
     from cripto_bot.domain.modules.models import StrategySettings
 
 Mode = Literal["PAPER"]
-
-
-@dataclass(frozen=True)
-class MarketSettings:
-    source: Literal["fixture", "binance_public"]
-    root: Path
-    data_dir: Path
-    fixture_file: Path | None = None
-    symbol: Literal["BTCUSDT"] = "BTCUSDT"
-    interval: Literal["15m"] = "15m"
-    page_limit: int = 1000
-    max_pages: int = 10
 
 
 @dataclass(frozen=True)

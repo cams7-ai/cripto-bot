@@ -40,6 +40,37 @@ sintética, usa `-I`/guard de sockets e não grava consumo no registro real.
 Guia, limitações de cache/instalação e resultados:
 [Sprint 06A](../docs/testes/sprint-06a-validacao.md).
 
+## Composição da Sprint 06B
+
+Coleta, parsers/DTOs, paginação, store/checkpoint e exportação de mercado estão
+em `../cripto-market-data/src/cripto_market_data`, biblioteca/CLI e Git próprios.
+`cripto-bot collect-market` conserva argumentos, resultados, diagnóstico e opt-in
+por delegação; as fachadas legadas reexportam os mesmos objetos. Carteira,
+risco/admissão, flags, ledger, backtest e análise continuam no bot.
+
+Disponibilizar também o wheel
+`../cripto-market-data/dist/06b-final/cripto_market_data-0.1.0-py3-none-any.whl`
+antes de sync locked. O novo projeto depende do core validado na 06A; não foi
+necessário alterar esse artefato. O bot exige as duas bibliotecas por versão
+exata e hash nos locks, sem importar checkout irmão. O fingerprint agora inclui
+a implementação de market-data realmente carregada; troca isolada nela bloqueia
+retomada de protocolo congelado, sem impedir report somente leitura anterior.
+
+Para o smoke da composição atual, usar `WHEEL_SMOKE_STAGE=06b` com
+`uv run --locked --offline python tests/wheel_smoke.py`, ambiente novo
+`.venv-wheel-06b` e wheel do bot em `dist/06b-final`. Os marcos layout/final da
+06A e seus artefatos/ambientes continuam preservados. A nova CLI standalone
+`cripto-market-data` exige `--root` absoluto e não precisa do bot instalado;
+consulte [sua API/README](../cripto-market-data/README.md).
+
+Os datasets continuam nos caminhos configurados. Não mover/resetar bancos para
+adotar a biblioteca; mesmo diretório nas duas CLIs usa o mesmo writer lock. O
+exportador recebe a identidade do produtor: bot continua identificado como bot,
+e standalone como market-data. A lista de quatro arquivos do manifesto e o
+hash canônico de candles continuam compatíveis com o preparo histórico.
+
+[Guia/evidências e limitação de cache da 06B](../docs/testes/sprint-06b-validacao.md).
+
 ## Preparação
 
 Raiz funcional: `/home/cams7/Dev/Cripto/cripto-bot`. Requer uv **0.12.19** e Python **3.13.15**.
